@@ -1,0 +1,181 @@
+'use client';
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { useFormContext } from '../form-context';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CalendarIcon, Percent, ToyBrick } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Badge } from '@/components/ui/badge';
+import { plans } from '@/lib/plans';
+
+export function PlanStep() {
+  const { form, nextStep, prevStep } = useFormContext();
+  const { control, watch } = form;
+
+  const handleNext = async () => {
+    const isValid = await form.trigger(['plan']);
+    if (isValid) {
+      nextStep();
+    }
+  }
+
+  const selectedPlanId = watch('plan.planId');
+  const discountType = watch('plan.discount.type');
+  const discountValue = watch('plan.discount.value');
+  
+  const selectedPlan = plans.find(p => p.id === selectedPlanId);
+  const priceString = selectedPlan?.price || '0';
+  const price = parseFloat(priceString.replace('R$ ', '').replace(',', '.'));
+
+  let finalPrice = price;
+  if(selectedPlan) {
+    if(discountType === 'PERCENT') {
+        finalPrice = price * (1 - discountValue / 100);
+    } else {
+        finalPrice = price - discountValue;
+    }
+  }
+
+  return (
+    <Card className="shadow-soft rounded-2xl">
+      <CardHeader>
+        <CardTitle>Plano & Pagamento</CardTitle>
+        <CardDescription>
+          Selecione o plano, aplique descontos e defina a data de vencimento.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <FormField
+            control={control}
+            name="plan.planId"
+            render={({ field }) => (
+            <FormItem>
+                <FormLabel>Plano *</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                    <SelectTrigger>
+                    <SelectValue placeholder="Selecione um plano" />
+                    </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                    {plans.map(plan => (
+                        <SelectItem key={plan.id} value={plan.id}>
+                            <div className="flex justify-between w-full">
+                                <span>{plan.name}</span>
+                                <span className="text-muted-foreground">{plan.price}</span>
+                            </div>
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+                </Select>
+                <FormMessage />
+            </FormItem>
+            )}
+        />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormItem>
+                <FormLabel>Desconto</FormLabel>
+                <div className="flex gap-2">
+                    <ToggleGroup 
+                        type="single"
+                        variant="outline"
+                        defaultValue="PERCENT"
+                        value={discountType}
+                        onValueChange={(value) => form.setValue('plan.discount.type', value as 'PERCENT' | 'ABSOLUTE')}
+                    >
+                        <ToggleGroupItem value="PERCENT" aria-label="Toggle percent">
+                            <Percent className="h-4 w-4" />
+                        </ToggleGroupItem>
+                        <ToggleGroupItem value="ABSOLUTE" aria-label="Toggle absolute">
+                            R$
+                        </ToggleGroupItem>
+                    </ToggleGroup>
+                    <FormField
+                        control={control}
+                        name="plan.discount.value"
+                        render={({ field }) => (
+                            <FormControl>
+                               <Input type="number" placeholder="Valor do desconto" {...field} onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)} />
+                            </FormControl>
+                        )}
+                    />
+                </div>
+                 <FormMessage>{form.formState.errors.plan?.discount?.value?.message}</FormMessage>
+            </FormItem>
+
+            <FormItem>
+                <FormLabel>Valor Final</FormLabel>
+                <div className="p-3 rounded-lg border bg-muted flex justify-between items-center">
+                    <span className="font-bold text-lg">R$ {finalPrice.toFixed(2)}</span>
+                    {discountValue > 0 && <Badge>Desconto aplicado</Badge>}
+                </div>
+            </FormItem>
+        </div>
+        
+        <FormField
+          control={control}
+          name="plan.dueDate"
+          render={({ field }) => (
+            <FormItem className="flex flex-col">
+              <FormLabel>Data de Vencimento da Fatura *</FormLabel>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-[240px] pl-3 text-left font-normal",
+                        !field.value && "text-muted-foreground"
+                      )}
+                    >
+                      {field.value ? (
+                        format(field.value, "dd/MM/yyyy")
+                      ) : (
+                        <span>Selecione uma data</span>
+                      )}
+                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={field.value}
+                    onSelect={field.onChange}
+                    disabled={(date) => date < new Date()}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </CardContent>
+      <CardFooter className="justify-between">
+        <Button variant="ghost" onClick={prevStep} type="button">Voltar</Button>
+        <Button onClick={handleNext} type="button">Continuar</Button>
+      </CardFooter>
+    </Card>
+  );
+}
