@@ -26,7 +26,6 @@ import { useToast } from "@/hooks/use-toast"
 import { logAction } from "@/lib/logger"
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar"
 
-// In a real i18n setup, this would come from dedicated JSON files and a proper library.
 const translations = {
   'pt-BR': {
     theme: 'Tema',
@@ -86,7 +85,6 @@ const useTranslation = (lang: string) => {
     const locale = localeMap[lang] || 'pt-BR';
     return translations[locale];
 }
-
 
 export function Header() {
   const [theme, setThemeState] = useState('system');
@@ -185,53 +183,18 @@ export function Header() {
     
     const themeLabels = { light: t.light, dark: t.dark, system: t.system };
     toast({ title: t.themeChangedToast(themeLabels[newTheme]) });
-    logAction({
-        user: 'Kristin Watson',
-        origin: 'professional',
-        entity: 'Perfil',
-        entityId: 'user-123',
-        action: 'Edição',
-        description: `Tema de preferência alterado para ${newTheme}.`,
-        details: { before: { theme: theme }, after: { theme: newTheme } }
-    });
   };
   
   const handleLanguageChange = (lang: 'PT' | 'US' | 'ES') => {
     setLanguage(lang);
     localStorage.setItem('lang', lang);
-
     const langLabels = { PT: "Português", US: "English (US)", ES: "Español" };
-    const newTranslations = useTranslation(lang);
-    
-    toast({ title: newTranslations.langChangedToast(langLabels[lang]) });
-
-    logAction({
-        user: 'Kristin Watson',
-        origin: 'professional',
-        entity: 'Perfil',
-        entityId: 'user-123',
-        action: 'Edição',
-        description: `Idioma de preferência alterado para ${langLabels[lang]}.`,
-        details: { before: { locale: 'pt-BR' }, after: { locale: lang === 'PT' ? 'pt-BR' : lang === 'US' ? 'en-US' : 'es-ES' } }
-    });
+    toast({ title: translations[lang === 'PT' ? 'pt-BR' : lang === 'US' ? 'en-US' : 'es-ES'].langChangedToast(langLabels[lang]) });
   };
 
   const handleUnitChange = (unitId: string) => {
-    const previousUnitId = currentUnitId;
     setCurrentUnitId(unitId);
     localStorage.setItem('currentUnitId', unitId);
-
-    logAction({
-        user: 'Kristin Watson',
-        origin: 'professional',
-        entity: 'Configurações',
-        entityId: 'global-scope',
-        action: 'Edição',
-        description: `Visualização trocada para unidade "${units.find(u => u.id === unitId)?.name}".`,
-        details: { fromUnitId: previousUnitId, toUnitId: unitId, action: 'unit.switch' },
-        unitId: unitId,
-    });
-
     window.location.reload();
   };
 
@@ -248,13 +211,7 @@ export function Header() {
       </div>
       
       <div className="flex items-center gap-1 md:gap-2">
-        {!isClient ? (
-           <>
-            <div className="h-9 w-9" />
-            <div className="h-9 w-12" />
-            <div className="h-9 w-24" />
-          </>
-        ) : (
+        {isClient && (
           <>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -265,7 +222,7 @@ export function Header() {
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>{t.theme}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuRadioGroup value={theme} onValueChange={(v) => setTheme(v as 'light' | 'dark' | 'system')}>
+                <DropdownMenuRadioGroup value={theme} onValueChange={(v) => setTheme(v as any)}>
                     <DropdownMenuRadioItem value="light">{t.light}</DropdownMenuRadioItem>
                     <DropdownMenuRadioItem value="dark">{t.dark}</DropdownMenuRadioItem>
                     <DropdownMenuRadioItem value="system">{t.system}</DropdownMenuRadioItem>
@@ -283,7 +240,7 @@ export function Header() {
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>{t.language}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuRadioGroup value={language} onValueChange={(v) => handleLanguageChange(v as 'PT' | 'US' | 'ES')}>
+                <DropdownMenuRadioGroup value={language} onValueChange={(v) => handleLanguageChange(v as any)}>
                   <DropdownMenuRadioItem value="PT">Português</DropdownMenuRadioItem>
                   <DropdownMenuRadioItem value="US">English (US)</DropdownMenuRadioItem>
                   <DropdownMenuRadioItem value="ES">Español</DropdownMenuRadioItem>
@@ -295,11 +252,11 @@ export function Header() {
               <DropdownMenuTrigger asChild disabled={units.length <= 1}>
                  <button className="relative p-2 text-muted-foreground hover:text-primary transition-colors flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed">
                   <Building className="h-5 w-5" />
-                  <span className="text-xs font-bold max-w-[100px] truncate">{selectedUnit?.name || 'Nenhuma unidade'}</span>
+                  <span className="text-xs font-bold max-w-[100px] truncate">{selectedUnit?.name || 'Unidade'}</span>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Selecionar Unidade</DropdownMenuLabel>
+                <DropdownMenuLabel>Unidade Ativa</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuRadioGroup value={currentUnitId || ''} onValueChange={handleUnitChange}>
                   {units.map(unit => <DropdownMenuRadioItem key={unit.id} value={unit.id}>{unit.name}</DropdownMenuRadioItem>)}
@@ -326,17 +283,12 @@ export function Header() {
               </Avatar>
               <div className="hidden sm:block">
                 <p className="text-sm font-bold text-foreground leading-tight">Kristin Watson</p>
-                <p className="text-xs text-muted-foreground">Gerente</p>
+                <p className="text-xs text-muted-foreground">Admin</p>
               </div>
               <ChevronDown className="h-4 w-4 text-muted-foreground hidden sm:block" />
             </div>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-             <DropdownMenuLabel>
-                <p className="font-bold text-foreground">Kristin Watson</p>
-                <p className="text-xs text-muted-foreground font-normal">kristin@beegym.pro</p>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
             <DropdownMenuItem asChild><Link href="/dashboard/settings">{t.settings}</Link></DropdownMenuItem>
             <DropdownMenuItem>{t.support}</DropdownMenuItem>
           </DropdownMenuContent>
