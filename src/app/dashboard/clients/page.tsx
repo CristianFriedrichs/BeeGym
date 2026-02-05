@@ -2,9 +2,6 @@
 
 import {
   Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,75 +18,44 @@ import {
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-
-export const initialClients = [
-  {
-    id: 1,
-    name: 'Milos Vasiljevic',
-    email: 'milos@example.com',
-    objetivo: 'Hipertrofia',
-    plan: 'Gold Plan',
-    status: 'Ativo',
-    avatar: 'https://i.pravatar.cc/150?img=13',
-    primaryUnitId: 'unit-1',
-  },
-  {
-    id: 2,
-    name: 'Jovana Pavlovic',
-    email: 'jovana@example.com',
-    objetivo: 'Emagrecimento',
-    plan: 'Silver Plan',
-    status: 'Inadimplente',
-    avatar: 'https://i.pravatar.cc/150?img=16',
-    primaryUnitId: 'unit-1',
-  },
-  {
-    id: 3,
-    name: 'Nikola Vujinovic',
-    email: 'nikola@example.com',
-    objetivo: 'Qualidade de Vida',
-    plan: 'Gold Plan',
-    status: 'Pendente',
-    avatar: 'https://i.pravatar.cc/150?img=15',
-    primaryUnitId: 'unit-2',
-  },
-  {
-    id: 4,
-    name: 'Ana Clara',
-    email: 'anaclara@example.com',
-    objetivo: 'Definição Muscular',
-    plan: 'Plano Pro',
-    status: 'Ativo',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=256&h=256&fit=crop',
-    primaryUnitId: 'unit-1',
-  },
-];
+import { getClients, Client } from '@/services/supabase/clients';
 
 export default function ClientsPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [clients, setClients] = useState(initialClients);
-  const [currentUnitId, setCurrentUnitId] = useState<string | null>(null);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  useEffect(() => {
-    const storedClients = localStorage.getItem('students_data');
-    if (storedClients) {
-      setClients(JSON.parse(storedClients));
-    }
-    const unitId = localStorage.getItem('currentUnitId');
-    setCurrentUnitId(unitId);
-  }, []);
+  // Mock Unit ID for now - in a real app this would come from Auth Context
+  const currentUnitId = "unit-1";
 
-  const handleViewDetails = (clientId: number) => {
+  useEffect(() => {
+    async function fetchClients() {
+      setIsLoading(true);
+      try {
+        // Fetch clients for the current unit (mocked ID for now until Auth is ready)
+        // Pass searchTerm to the service to let Supabase handle filtering if desired,
+        // or filter locally. The service supports server-side search.
+        const data = await getClients(undefined, searchTerm); // undefined unitId to fetch all for now or currentUnitId
+        setClients(data);
+      } catch (error) {
+        console.error("Failed to fetch clients", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    // Debounce search could be added here
+    const timer = setTimeout(() => {
+      fetchClients();
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const handleViewDetails = (clientId: string) => {
     router.push(`/dashboard/clients/${clientId}`);
   };
-
-  const filteredClients = clients.filter(
-    (client) =>
-      client.primaryUnitId === currentUnitId &&
-      (client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.email.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
 
   return (
     <div className="space-y-8">
@@ -130,52 +96,65 @@ export default function ClientsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredClients.map((client) => (
-              <TableRow
-                key={client.id}
-                className="hover:bg-gray-50/50 dark:hover:bg-gray-800/40 transition-colors cursor-pointer"
-                onClick={() => handleViewDetails(client.id)}
-              >
-                <TableCell className="py-4">
-                  <div className="flex items-center gap-3">
-                    <Image
-                      src={client.avatar}
-                      width={40}
-                      height={40}
-                      className="rounded-full"
-                      alt={client.name}
-                    />
-                    <div>
-                      <p className="font-bold">{client.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {client.email}
-                      </p>
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell>{client.objetivo}</TableCell>
-                <TableCell>{client.plan}</TableCell>
-                <TableCell>
-                  <span
-                    className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${
-                      client.status === 'Ativo'
-                        ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                        : client.status === 'Inadimplente'
-                        ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                        : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
-                    }`}
-                  >
-                    {client.status}
-                  </span>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={4} className="h-24 text-center">
+                  Carregando...
                 </TableCell>
               </TableRow>
-            ))}
-             {filteredClients.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center">
-                    Nenhum aluno encontrado para esta unidade.
+            ) : clients.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="h-24 text-center">
+                  Nenhum aluno encontrado.
+                </TableCell>
+              </TableRow>
+            ) : (
+              clients.map((client) => (
+                <TableRow
+                  key={client.id}
+                  className="hover:bg-gray-50/50 dark:hover:bg-gray-800/40 transition-colors cursor-pointer"
+                  onClick={() => handleViewDetails(client.id)}
+                >
+                  <TableCell className="py-4">
+                    <div className="flex items-center gap-3">
+                      {client.avatar ? (
+                        <Image
+                          src={client.avatar}
+                          width={40}
+                          height={40}
+                          className="rounded-full object-cover"
+                          alt={client.name}
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-bold">
+                          {client.name.substring(0, 2).toUpperCase()}
+                        </div>
+                      )}
+
+                      <div>
+                        <p className="font-bold">{client.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {client.email}
+                        </p>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>{client.objetivo}</TableCell>
+                  <TableCell>{client.plan}</TableCell>
+                  <TableCell>
+                    <span
+                      className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${client.status === 'Ativo'
+                          ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                          : client.status === 'Inadimplente'
+                            ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                            : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                        }`}
+                    >
+                      {client.status}
+                    </span>
                   </TableCell>
                 </TableRow>
+              ))
             )}
           </TableBody>
         </Table>
@@ -184,4 +163,3 @@ export default function ClientsPage() {
   );
 }
 
-    

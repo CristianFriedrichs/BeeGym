@@ -12,13 +12,13 @@ import { format, startOfMonth, endOfMonth, parseISO, isWithinInterval, getMonth,
 import { ptBR } from 'date-fns/locale';
 import { Label } from '@/components/ui/label';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ResponsiveContainer, BarChart, XAxis, YAxis, Tooltip, Legend, Bar, Pie, Cell, LineChart, CartesianGrid } from 'recharts';
-import { initialClients as students } from '@/app/dashboard/clients/page';
+import { initialClients as students } from '@/lib/mock-data';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { initialInvoices } from '@/app/dashboard/payments/page';
@@ -35,10 +35,10 @@ import { plans } from '@/lib/plans';
 
 
 const reportTypes = [
-  { value: 'financeiro', label: 'Financeiro', icon: BarChart3 },
-  { value: 'aulas', label: 'Aulas', icon: GanttChart },
-  { value: 'frequencia', label: 'Frequência', icon: Activity },
-  { value: 'alunos', label: 'Alunos', icon: Users },
+    { value: 'financeiro', label: 'Financeiro', icon: BarChart3 },
+    { value: 'aulas', label: 'Aulas', icon: GanttChart },
+    { value: 'frequencia', label: 'Frequência', icon: Activity },
+    { value: 'alunos', label: 'Alunos', icon: Users },
 ];
 
 const PIE_CHART_COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#6B7280'];
@@ -76,7 +76,7 @@ export default function ReportsPage() {
     const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
     const [newTemplateName, setNewTemplateName] = useState('');
     const { toast } = useToast();
-    const [allClasses, setAllClasses] = useState<{name: string}[]>([]);
+    const [allClasses, setAllClasses] = useState<{ name: string }[]>([]);
 
     useEffect(() => {
         try {
@@ -92,8 +92,8 @@ export default function ReportsPage() {
             const recurring: RecurringClass[] = JSON.parse(localStorage.getItem('recurring_classes') || '[]');
             const single: any[] = JSON.parse(localStorage.getItem('scheduled_classes') || '[]');
             const classNames = [...new Set([...recurring.map(c => c.name), ...single.map(c => c.type)])];
-            setAllClasses(classNames.map(name => ({name})));
-        } catch(e) {
+            setAllClasses(classNames.map(name => ({ name })));
+        } catch (e) {
             console.error('Failed to load classes for filter');
         }
 
@@ -114,9 +114,9 @@ export default function ReportsPage() {
             return inRange && matchesStatus && matchesPaymentMethod;
         });
 
-        const revenue = filtered.filter((i:any) => i.status === 'Pago').reduce((sum:number, i:any) => sum + i.amount, 0);
-        const pending = filtered.filter((i:any) => i.status === 'Pendente').reduce((sum:number, i:any) => sum + i.amount, 0);
-        const overdue = filtered.filter((i:any) => i.status === 'Atrasado').reduce((sum:number, i:any) => sum + i.amount, 0);
+        const revenue = filtered.filter((i: any) => i.status === 'Pago').reduce((sum: number, i: any) => sum + i.amount, 0);
+        const pending = filtered.filter((i: any) => i.status === 'Pendente').reduce((sum: number, i: any) => sum + i.amount, 0);
+        const overdue = filtered.filter((i: any) => i.status === 'Atrasado').reduce((sum: number, i: any) => sum + i.amount, 0);
 
         const monthlyData: { [key: string]: any } = {};
         filtered.forEach((inv: any) => {
@@ -143,12 +143,12 @@ export default function ReportsPage() {
         const recurring: RecurringClass[] = JSON.parse(localStorage.getItem('recurring_classes') || '[]');
         const single: any[] = JSON.parse(localStorage.getItem('scheduled_classes') || '[]');
 
-        const allInstances = [...recurring.map(c => ({...c, type: c.name, date: c.startDate})), ...single].filter(c => {
-             const classDate = c.date ? (typeof c.date === 'string' ? parseISO(c.date) : c.date) : new Date();
-             const inRange = range?.from && range?.to ? isWithinInterval(classDate, { start: range.from, end: range.to }) : true;
-             const matchesInstructor = !currentFilters.instructor || currentFilters.instructor === 'all' || (c as any).instructor === currentFilters.instructor;
-             const matchesClassType = !currentFilters.classType || currentFilters.classType === 'all' || (c.startDate ? 'coletiva' : 'individual') === currentFilters.classType;
-             return inRange && matchesInstructor && matchesClassType;
+        const allInstances = [...recurring.map(c => ({ ...c, type: c.name, date: c.startDate })), ...single].filter(c => {
+            const classDate = c.date ? (typeof c.date === 'string' ? parseISO(c.date) : c.date) : new Date();
+            const inRange = range?.from && range?.to ? isWithinInterval(classDate, { start: range.from, end: range.to }) : true;
+            const matchesInstructor = !currentFilters.instructor || currentFilters.instructor === 'all' || (c as any).instructor === currentFilters.instructor;
+            const matchesClassType = !currentFilters.classType || currentFilters.classType === 'all' || (c.startDate ? 'coletiva' : 'individual') === currentFilters.classType;
+            return inRange && matchesInstructor && matchesClassType;
         });
 
         const classTypes = [...new Set(allInstances.map(c => c.type))];
@@ -168,14 +168,14 @@ export default function ReportsPage() {
             tableData: allInstances.map(c => ({ name: c.name, instructor: (c as any).instructor, location: c.location, type: c.startDate ? 'Recorrente' : 'Individual' })),
         }
     }
-    
+
     const generateAttendanceData = (range: DateRange | undefined, currentFilters: any) => {
         const attendance = [
             { date: '2024-07-25', student: 'Ana Clara', class: 'Yoga', instructor: 'Kristin Watson', status: 'Presente' },
             { date: '2024-07-25', student: 'Milos Vasiljevic', class: 'Yoga', instructor: 'Kristin Watson', status: 'Presente' },
             { date: '2024-07-24', student: 'Ana Clara', class: 'HIIT', instructor: 'Sarah Jenkins', status: 'Falta' },
         ];
-    
+
         const filtered = attendance.filter(att => {
             const attDate = parseISO(att.date);
             const inRange = range?.from && range?.to ? isWithinInterval(attDate, { start: range.from, end: range.to }) : true;
@@ -184,15 +184,15 @@ export default function ReportsPage() {
             const studentId = students.find(s => s.name === att.student)?.id.toString();
             const matchesStudent = !currentFilters.student || currentFilters.student === 'all' || studentId === currentFilters.student;
             const matchesStatus = !currentFilters.attendanceStatus || currentFilters.attendanceStatus === 'all' || att.status.toLowerCase() === currentFilters.attendanceStatus;
-    
+
             return inRange && matchesClass && matchesInstructor && matchesStudent && matchesStatus;
         });
-    
+
         const presenceCount = filtered.filter(a => a.status === 'Presente').length;
         const absenceCount = filtered.filter(a => a.status === 'Falta').length;
         const total = presenceCount + absenceCount;
         const presenceRate = total > 0 ? (presenceCount / total) * 100 : 0;
-    
+
         return {
             kpis: [
                 { title: 'Total de Presenças', value: presenceCount },
@@ -207,7 +207,7 @@ export default function ReportsPage() {
             tableData: filtered,
         };
     };
-    
+
     const generateStudentsData = (range: DateRange | undefined, currentFilters: any) => {
         const filtered = students.filter(s => {
             const matchesStatus = !currentFilters.studentStatus || currentFilters.studentStatus === 'all' || s.status === currentFilters.studentStatus;
@@ -215,11 +215,11 @@ export default function ReportsPage() {
             const matchesPlan = !currentFilters.currentPlan || currentFilters.currentPlan === 'all' || plans.find(p => p.name === (s as any).plan)?.id === currentFilters.currentPlan;
             return matchesStatus && matchesPlan;
         });
-    
+
         const activeStudents = filtered.filter(s => s.status === 'Ativo').length;
         const inactiveStudents = filtered.filter(s => s.status === 'Inativo').length;
         const pendingStudents = filtered.filter(s => s.status === 'Pendente' || s.status === 'Inadimplente').length;
-    
+
         return {
             kpis: [
                 { title: 'Total de Alunos', value: filtered.length },
@@ -245,9 +245,9 @@ export default function ReportsPage() {
             const from = startOfMonth(new Date(selectedYear, selectedMonth));
             const to = endOfMonth(from);
             const dateRange: DateRange = { from, to };
-            
+
             let data;
-            switch(reportType) {
+            switch (reportType) {
                 case 'financeiro': data = generateFinancialData(dateRange, filters); break;
                 case 'aulas': data = generateClassesData(dateRange, filters); break;
                 case 'frequencia': data = generateAttendanceData(dateRange, filters); break;
@@ -279,27 +279,27 @@ export default function ReportsPage() {
         setSelectedMonth(template.selectedMonth);
         setSelectedYear(template.selectedYear);
         setViewModes(template.viewModes);
-        toast({ title: `Modelo "${template.name}" carregado.`, description: "Clique em 'Gerar Relatório' para ver os dados."});
+        toast({ title: `Modelo "${template.name}" carregado.`, description: "Clique em 'Gerar Relatório' para ver os dados." });
     };
-    
+
     const handleFilterChange = (filterName: string, value: any) => {
         setFilters((prev: any) => ({ ...prev, [filterName]: value }));
     };
 
     const ReportFilters = () => {
-        switch(reportType) {
+        switch (reportType) {
             case 'financeiro':
                 return (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                           <Label>Status do Pagamento</Label>
+                            <Label>Status do Pagamento</Label>
                             <Select value={filters.status || 'all'} onValueChange={(v) => handleFilterChange('status', v)}>
                                 <SelectTrigger><SelectValue placeholder="Status do Pagamento" /></SelectTrigger>
                                 <SelectContent><SelectItem value="all">Todos</SelectItem><SelectItem value="Pago">Pago</SelectItem><SelectItem value="Pendente">Pendente</SelectItem><SelectItem value="Atrasado">Atrasado</SelectItem><SelectItem value="Cancelado">Cancelado</SelectItem></SelectContent>
                             </Select>
                         </div>
                         <div className="space-y-2">
-                           <Label>Forma de Pagamento</Label>
+                            <Label>Forma de Pagamento</Label>
                             <Select value={filters.paymentMethod || 'all'} onValueChange={(v) => handleFilterChange('paymentMethod', v)}>
                                 <SelectTrigger><SelectValue placeholder="Forma de Pagamento" /></SelectTrigger>
                                 <SelectContent><SelectItem value="all">Todas</SelectItem><SelectItem value="Pix">Pix</SelectItem><SelectItem value="Cartão de Crédito">Cartão de Crédito</SelectItem><SelectItem value="Boleto">Boleto</SelectItem><SelectItem value="Dinheiro">Dinheiro</SelectItem></SelectContent>
@@ -308,10 +308,10 @@ export default function ReportsPage() {
                     </div>
                 );
             case 'aulas':
-                 return (
+                return (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                           <Label>Instrutor(a)</Label>
+                            <Label>Instrutor(a)</Label>
                             <Select value={filters.instructor || 'all'} onValueChange={(v) => handleFilterChange('instructor', v)}>
                                 <SelectTrigger><SelectValue placeholder="Todos os Instrutores" /></SelectTrigger>
                                 <SelectContent>
@@ -321,7 +321,7 @@ export default function ReportsPage() {
                             </Select>
                         </div>
                         <div className="space-y-2">
-                           <Label>Tipo de Aula</Label>
+                            <Label>Tipo de Aula</Label>
                             <Select value={filters.classType || 'all'} onValueChange={(v) => handleFilterChange('classType', v)}>
                                 <SelectTrigger><SelectValue placeholder="Todos os Tipos" /></SelectTrigger>
                                 <SelectContent>
@@ -332,7 +332,7 @@ export default function ReportsPage() {
                             </Select>
                         </div>
                     </div>
-                 );
+                );
             case 'frequencia':
                 return (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -437,7 +437,7 @@ export default function ReportsPage() {
                 return <p className="text-sm text-muted-foreground">Filtros para "{reportType}" aparecerão aqui.</p>
         }
     };
-    
+
     const renderTable = () => {
         if (!reportData?.tableData || reportData.tableData.length === 0) return <p className="text-center text-muted-foreground">Nenhum dado para exibir.</p>;
 
@@ -458,7 +458,7 @@ export default function ReportsPage() {
     };
 
     const ReportVisuals = () => {
-        if(isLoading) return (
+        if (isLoading) return (
             <div className="space-y-6">
                 <div className="grid grid-cols-4 gap-4">
                     <Skeleton className="h-24" /><Skeleton className="h-24" /><Skeleton className="h-24" /><Skeleton className="h-24" />
@@ -467,26 +467,26 @@ export default function ReportsPage() {
                 <Skeleton className="h-48" />
             </div>
         );
-        if(!reportData) return null;
+        if (!reportData) return null;
 
         let ChartComponent;
-        switch(reportType) {
+        switch (reportType) {
             case 'financeiro':
-                 ChartComponent = (
+                ChartComponent = (
                     <ResponsiveContainer width="100%" height={300}>
                         <BarChart data={reportData.chartData}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} />
                             <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
-                            <YAxis fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `R$${v/1000}k`} />
-                            <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}/>
-                            <Legend wrapperStyle={{fontSize: "12px"}}/>
+                            <YAxis fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `R$${v / 1000}k`} />
+                            <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }} />
+                            <Legend wrapperStyle={{ fontSize: "12px" }} />
                             <Bar dataKey="Atrasado" stackId="a" fill="#ef4444" radius={[0, 0, 4, 4]} />
                             <Bar dataKey="Pendente" stackId="a" fill="#f59e0b" />
                             <Bar dataKey="Pago" stackId="a" fill="#22c55e" radius={[4, 4, 0, 0]} />
                         </BarChart>
                     </ResponsiveContainer>
-                 );
-                 break;
+                );
+                break;
             case 'aulas':
                 ChartComponent = (
                     <ResponsiveContainer width="100%" height={300}>
@@ -496,47 +496,47 @@ export default function ReportsPage() {
                                     <Cell key={`cell-${index}`} fill={PIE_CHART_COLORS[index % PIE_CHART_COLORS.length]} />
                                 ))}
                             </Pie>
-                            <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}/>
-                            <Legend wrapperStyle={{fontSize: "12px"}}/>
+                            <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }} />
+                            <Legend wrapperStyle={{ fontSize: "12px" }} />
                         </PieChart>
                     </ResponsiveContainer>
                 );
                 break;
             case 'frequencia':
-                 ChartComponent = (
-                     <ResponsiveContainer width="100%" height={300}>
-                         <LineChart data={reportData.chartData}>
-                             <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                             <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
-                             <YAxis fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}%`} />
-                             <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}/>
-                             <Legend wrapperStyle={{fontSize: "12px"}}/>
-                             <Line type="monotone" dataKey="Taxa" name="Taxa de Presença" stroke="#8884d8" />
-                         </LineChart>
-                     </ResponsiveContainer>
-                 );
-                 break;
+                ChartComponent = (
+                    <ResponsiveContainer width="100%" height={300}>
+                        <LineChart data={reportData.chartData}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                            <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
+                            <YAxis fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}%`} />
+                            <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }} />
+                            <Legend wrapperStyle={{ fontSize: "12px" }} />
+                            <Line type="monotone" dataKey="Taxa" name="Taxa de Presença" stroke="#8884d8" />
+                        </LineChart>
+                    </ResponsiveContainer>
+                );
+                break;
             case 'alunos':
-                 ChartComponent = (
-                     <ResponsiveContainer width="100%" height={300}>
-                         <BarChart data={reportData.chartData}>
-                             <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                             <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
-                             <YAxis fontSize={12} tickLine={false} axisLine={false} />
-                             <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}/>
-                             <Legend wrapperStyle={{fontSize: "12px"}}/>
-                             <Bar dataKey="value" name="Alunos" fill="#22c55e" radius={[4, 4, 0, 0]} />
-                         </BarChart>
-                     </ResponsiveContainer>
-                 );
-                 break;
+                ChartComponent = (
+                    <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={reportData.chartData}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                            <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
+                            <YAxis fontSize={12} tickLine={false} axisLine={false} />
+                            <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }} />
+                            <Legend wrapperStyle={{ fontSize: "12px" }} />
+                            <Bar dataKey="value" name="Alunos" fill="#22c55e" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                    </ResponsiveContainer>
+                );
+                break;
             default: ChartComponent = <p>Gráfico não disponível para este tipo de relatório.</p>;
         }
 
         return (
             <div className="space-y-8">
                 {reportData.kpis && reportData.kpis.length > 0 && (
-                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         {reportData.kpis.map((kpi: any, index: number) => (
                             <Card key={index}>
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -558,7 +558,7 @@ export default function ReportsPage() {
             </div>
         );
     }
-    
+
     const activeFiltersCount = Object.values(filters).filter(v => v && v !== 'all').length;
 
 
@@ -572,11 +572,11 @@ export default function ReportsPage() {
             </div>
 
             <Card>
-                 <CardHeader>
+                <CardHeader>
                     <CardTitle>Configuração do Relatório</CardTitle>
-                 </CardHeader>
-                 <CardContent className="space-y-6">
-                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="space-y-2">
                             <Label>Tipo de Relatório</Label>
                             <Select value={reportType} onValueChange={setReportType}>
@@ -585,28 +585,28 @@ export default function ReportsPage() {
                             </Select>
                         </div>
                         <div className="space-y-2">
-                             <Label>Mês</Label>
-                             <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(Number(v))}>
+                            <Label>Mês</Label>
+                            <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(Number(v))}>
                                 <SelectTrigger><SelectValue /></SelectTrigger>
                                 <SelectContent>{getMonthOptions().map(opt => <SelectItem key={opt.value} value={opt.value.toString()}>{opt.label}</SelectItem>)}</SelectContent>
                             </Select>
                         </div>
                         <div className="space-y-2">
                             <Label>Ano</Label>
-                             <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(Number(v))}>
+                            <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(Number(v))}>
                                 <SelectTrigger><SelectValue /></SelectTrigger>
                                 <SelectContent>{getYearOptions().map(year => <SelectItem key={year} value={year.toString()}>{year}</SelectItem>)}</SelectContent>
                             </Select>
                         </div>
-                     </div>
-                      <div className="space-y-4 pt-2">
+                    </div>
+                    <div className="space-y-4 pt-2">
                         <div className="flex items-center space-x-2">
                             <Checkbox id="compare-period" checked={comparePeriod} onCheckedChange={(checked) => setComparePeriod(Boolean(checked))} />
                             <Label htmlFor="compare-period" className="font-normal">
                                 Comparar com período anterior
                             </Label>
                         </div>
-                         {comparePeriod && (
+                        {comparePeriod && (
                             <div className="pl-6 pt-2">
                                 <RadioGroup value={comparisonMode} onValueChange={setComparisonMode} className="flex gap-4">
                                     <div className="flex items-center space-x-2">
@@ -621,7 +621,7 @@ export default function ReportsPage() {
                             </div>
                         )}
                     </div>
-                     <Accordion type="single" collapsible className="w-full">
+                    <Accordion type="single" collapsible className="w-full">
                         <AccordionItem value="advanced-filters">
                             <AccordionTrigger className="text-base font-semibold hover:no-underline">
                                 <div className="flex items-center gap-2">
@@ -631,40 +631,40 @@ export default function ReportsPage() {
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent className="pt-4 space-y-4">
-                                 <ReportFilters />
-                                 {activeFiltersCount > 0 && (
-                                     <div className="mt-4 flex justify-end">
+                                <ReportFilters />
+                                {activeFiltersCount > 0 && (
+                                    <div className="mt-4 flex justify-end">
                                         <Button variant="ghost" size="sm" onClick={() => setFilters({})}>
                                             <Trash2 className="mr-2 h-4 w-4" />
                                             Limpar Filtros
                                         </Button>
                                     </div>
-                                 )}
+                                )}
                             </AccordionContent>
                         </AccordionItem>
                     </Accordion>
-                     <Separator />
-                     <div className="space-y-2">
-                         <Label>Formato de Visualização</Label>
-                         <ToggleGroup type="multiple" value={viewModes} onValueChange={setViewModes} className="justify-start">
-                             <ToggleGroupItem value="chart" aria-label="Ver gráfico">
+                    <Separator />
+                    <div className="space-y-2">
+                        <Label>Formato de Visualização</Label>
+                        <ToggleGroup type="multiple" value={viewModes} onValueChange={setViewModes} className="justify-start">
+                            <ToggleGroupItem value="chart" aria-label="Ver gráfico">
                                 <AreaChart className="h-4 w-4" />
                                 <span className="ml-2">Gráfico</span>
-                             </ToggleGroupItem>
-                             <ToggleGroupItem value="table" aria-label="Ver lista">
+                            </ToggleGroupItem>
+                            <ToggleGroupItem value="table" aria-label="Ver lista">
                                 <GanttChart className="h-4 w-4" />
-                                 <span className="ml-2">Lista</span>
-                             </ToggleGroupItem>
-                         </ToggleGroup>
-                     </div>
-                 </CardContent>
-                 <CardFooter className="justify-between bg-muted/50 py-3 px-6 border-t">
+                                <span className="ml-2">Lista</span>
+                            </ToggleGroupItem>
+                        </ToggleGroup>
+                    </div>
+                </CardContent>
+                <CardFooter className="justify-between bg-muted/50 py-3 px-6 border-t">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="outline"><Bookmark className="mr-2 h-4 w-4" /> Carregar Modelo</Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
-                             {savedTemplates.length > 0 ? savedTemplates.map(template => (
+                            {savedTemplates.length > 0 ? savedTemplates.map(template => (
                                 <DropdownMenuItem key={template.id} onSelect={() => handleLoadTemplate(template)}>
                                     <p className="font-semibold">{template.name}</p>
                                 </DropdownMenuItem>
@@ -674,17 +674,17 @@ export default function ReportsPage() {
                     <Button onClick={handleGenerateReport} disabled={isLoading}>
                         {isLoading ? <><Settings2 className="mr-2 h-4 w-4 animate-spin" /> Gerando...</> : <><Settings2 className="mr-2 h-4 w-4" /> Gerar Relatório</>}
                     </Button>
-                 </CardFooter>
+                </CardFooter>
             </Card>
 
-            
+
             {showReport && (
                 <Card className="h-full min-h-[500px]">
                     <CardHeader className="flex flex-row items-center justify-between">
                         <div>
                             <CardTitle>Visualização do Relatório</CardTitle>
                             <CardDescription>
-                                Exibindo relatório de "{reportTypes.find(rt => rt.value === reportType)?.label}" para {getMonthOptions().find(m=>m.value === selectedMonth)?.label}/{selectedYear}.
+                                Exibindo relatório de "{reportTypes.find(rt => rt.value === reportType)?.label}" para {getMonthOptions().find(m => m.value === selectedMonth)?.label}/{selectedYear}.
                             </CardDescription>
                         </div>
                         <div className="flex items-center gap-2">
@@ -712,8 +712,8 @@ export default function ReportsPage() {
                                     <Button variant="outline"><FileDown className="mr-2 h-4 w-4" />Exportar</Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent>
-                                    <DropdownMenuItem onSelect={() => toast({title: "Exportando como PDF..."})}><FileText className="mr-2 h-4 w-4" />Exportar como PDF (completo)</DropdownMenuItem>
-                                    <DropdownMenuItem onSelect={() => toast({title: "Exportando como CSV..."})}><BarChart3 className="mr-2 h-4 w-4" />Exportar como CSV (lista)</DropdownMenuItem>
+                                    <DropdownMenuItem onSelect={() => toast({ title: "Exportando como PDF..." })}><FileText className="mr-2 h-4 w-4" />Exportar como PDF (completo)</DropdownMenuItem>
+                                    <DropdownMenuItem onSelect={() => toast({ title: "Exportando como CSV..." })}><BarChart3 className="mr-2 h-4 w-4" />Exportar como CSV (lista)</DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         </div>
@@ -725,7 +725,7 @@ export default function ReportsPage() {
             )}
 
             {!showReport && (
-                 <Card className="h-full min-h-[500px]">
+                <Card className="h-full min-h-[500px]">
                     <CardContent className="p-6 flex flex-col items-center justify-center text-center h-[500px]">
                         <div className="p-4 bg-muted rounded-full">
                             <Filter className="h-10 w-10 text-muted-foreground" />
