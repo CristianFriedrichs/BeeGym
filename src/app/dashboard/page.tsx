@@ -71,8 +71,17 @@ export default function Dashboard() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Mock Unit ID
-  const currentUnitId = "unit-1";
+  // Mock Unit ID - should be replaced with context or dynamic state
+  const [currentUnitId, setCurrentUnitId] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    // Attempt to get from local storage or eventually from context
+    const storedUnitId = localStorage.getItem('currentUnitId');
+    // If not valid UUID or null, we might leave it undefined and let service handle it (return empty)
+    if (storedUnitId && storedUnitId.length > 10) {
+      setCurrentUnitId(storedUnitId);
+    }
+  }, []);
 
   useEffect(() => {
     setIsClient(true);
@@ -103,7 +112,7 @@ export default function Dashboard() {
     if (isClient) { // Only fetch on client
       fetchData();
     }
-  }, [isClient]);
+  }, [isClient, currentUnitId]);
 
   const liveClass = useMemo(() => {
     if (!isClient) return null;
@@ -117,8 +126,56 @@ export default function Dashboard() {
   }, [now, isClient, upcomingClasses]);
 
 
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [userName, setUserName] = useState('');
+
+  useEffect(() => {
+    // Check local storage for welcome flag
+    const welcomeSeen = localStorage.getItem('beegym_welcome_seen');
+    if (!welcomeSeen) {
+      // Get user name for personalization
+      const getUser = async () => {
+        const { data } = await import('@/lib/supabase/client').then(m => m.createClient().auth.getUser());
+        if (data.user) {
+          setUserName(data.user.user_metadata?.full_name?.split(' ')[0] || '');
+          setShowWelcome(true);
+        }
+      };
+      getUser();
+    }
+  }, []);
+
+  const handleCloseWelcome = (goToSettings: boolean) => {
+    setShowWelcome(false);
+    localStorage.setItem('beegym_welcome_seen', 'true');
+    if (goToSettings) {
+      // Logic handled via Link
+    }
+  };
+
   return (
     <div className="space-y-8">
+      <Dialog open={showWelcome} onOpenChange={setShowWelcome}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-[#00173F]">Bem-vindo ao BeeGym! 🚀</DialogTitle>
+            <DialogDescription className="pt-2">
+              Obrigado por escolher o BeeGym <span className="font-bold text-[#00173F]">{userName}</span>, que tal iniciar a configuração do seu Sistema?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-3 mt-4">
+            <Button variant="ghost" onClick={() => handleCloseWelcome(false)} className="text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200">
+              Agora Não
+            </Button>
+            <Link href="/dashboard/settings" onClick={() => handleCloseWelcome(true)}>
+              <Button className="bg-[#ff8c00] hover:bg-[#e67e00] text-white font-bold">
+                Sim, configurar
+              </Button>
+            </Link>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <TooltipProvider>
         {/* Live Class Card - Placeholder logic for now since we need live data */}
         {isClient && liveClass && (
