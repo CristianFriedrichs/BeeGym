@@ -87,6 +87,16 @@ export async function getKPIs(unitId?: string): Promise<KPI[]> {
             iconColor: 'text-primary',
         },
         {
+            title: 'Pagamentos Pendentes',
+            value: 'R$ 1.2K', // Mocked - will be replaced with real data
+            change: '-5.4%',
+            changeType: 'negative',
+            description: 'em relação ao mês anterior',
+            iconName: 'AlertTriangle',
+            iconBgColor: 'bg-yellow-500/10',
+            iconColor: 'text-yellow-500',
+        },
+        {
             title: 'Aulas Hoje',
             value: (eventsToday || 0).toString(),
             change: '0',
