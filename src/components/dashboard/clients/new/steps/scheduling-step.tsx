@@ -61,8 +61,42 @@ export function SchedulingStep() {
   const frequencyLimit = watch('plan.frequencyLimit');
   const totalCredits = watch('plan.totalCredits');
 
-  // Generate time slots based on organization settings
-  const timeSlots = ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00', '18:00'];
+  // Generate time slots dynamically based on organization opening_hours
+  const [availableTimeSlots, setAvailableTimeSlots] = useState<Record<string, string[]>>({});
+
+  // Generate time slots for each day when settings load
+  useEffect(() => {
+    if (settings.opening_hours) {
+      const slotsPerDay: Record<string, string[]> = {};
+
+      DAYS_OF_WEEK.forEach(({ value: dayKey }) => {
+        const dayHours = settings.opening_hours?.[dayKey];
+
+        if (dayHours && dayHours.open) {
+          const slots: string[] = [];
+          const [startHour, startMin] = dayHours.start.split(':').map(Number);
+          const [endHour, endMin] = dayHours.end.split(':').map(Number);
+
+          const startMinutes = startHour * 60 + startMin;
+          const endMinutes = endHour * 60 + endMin;
+          const sessionDuration = settings.default_session_duration || 60;
+
+          // Generate slots every 30 minutes
+          for (let time = startMinutes; time + sessionDuration <= endMinutes; time += 30) {
+            const hours = Math.floor(time / 60);
+            const minutes = time % 60;
+            slots.push(`${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`);
+          }
+
+          slotsPerDay[dayKey] = slots;
+        } else {
+          slotsPerDay[dayKey] = [];
+        }
+      });
+
+      setAvailableTimeSlots(slotsPerDay);
+    }
+  }, [settings.opening_hours, settings.default_session_duration]);
 
   // Handle day selection
   const handleDayToggle = (day: string) => {
@@ -72,6 +106,17 @@ export function SchedulingStep() {
       delete newDayTimes[day];
       setDayTimes(newDayTimes);
     } else {
+      // Check if day is open
+      const dayHours = settings.opening_hours?.[day];
+      if (!dayHours || !dayHours.open) {
+        toast({
+          title: 'Dia Fechado',
+          description: 'A academia não funciona neste dia.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       // Check frequency limit
       if (frequencyLimit && selectedDays.length >= frequencyLimit) {
         toast({
@@ -308,7 +353,7 @@ export function SchedulingStep() {
                           <SelectValue placeholder="Selecione um horário" />
                         </SelectTrigger>
                         <SelectContent>
-                          {timeSlots.map(slot => {
+                          {(availableTimeSlots[day] || []).map((slot: string) => {
                             const key = `${day}-${slot}`;
                             const isFull = capacityStatus[key];
                             return (
