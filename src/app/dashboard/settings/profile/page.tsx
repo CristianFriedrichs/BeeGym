@@ -43,17 +43,23 @@ export default function ProfilePage() {
 
                 if (error) {
                     console.error('Error fetching user data:', error);
-                    // Fallback to auth metadata if table query fails
-                    setFullName(user.user_metadata?.full_name || user.email?.split('@')[0] || '');
-                    return;
                 }
+
+                // Priority fallback for avatar: db → auth metadata → null
+                const dbAvatar = userData?.avatar_url;
+                const authAvatar = user.user_metadata?.avatar_url || user.user_metadata?.picture;
+                const finalAvatar = dbAvatar || authAvatar || '';
 
                 if (userData) {
                     setFullName(userData.name || '');
                     setProfessionalTitle(userData.job_title || '');
                     setBio(userData.bio || '');
-                    setAvatarUrl(userData.avatar_url || '');
+                    setAvatarUrl(finalAvatar);
                     setShowPublicProfile(userData.show_public_profile ?? true);
+                } else {
+                    // Fallback if no user data in table
+                    setFullName(user.user_metadata?.full_name || user.email?.split('@')[0] || '');
+                    setAvatarUrl(authAvatar || '');
                 }
             } catch (err) {
                 console.error('Error loading profile:', err);
@@ -63,6 +69,58 @@ export default function ProfilePage() {
         }
         fetchProfile();
     }, []);
+
+    const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !userId) return;
+
+        setIsSaving(true);
+        try {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${userId}-${Date.now()}.${fileExt}`;
+            const filePath = `${fileName}`;
+
+            // Upload to avatars bucket
+            const { error: uploadError } = await supabase.storage
+                .from('avatars')
+                .upload(filePath, file, { upsert: true });
+
+            if (uploadError) throw uploadError;
+
+            // Get public URL
+            const { data: { publicUrl } } = supabase.storage
+                .from('avatars')
+                .getPublicUrl(filePath);
+
+            // Update users table
+            const { error: updateError } = await supabase
+                .from('users')
+                .update({ avatar_url: publicUrl })
+                .eq('id', userId);
+
+            if (updateError) throw updateError;
+
+            setAvatarUrl(publicUrl);
+
+            toast({
+                title: 'Foto Atualizada!',
+                description: 'Sua foto de perfil foi salva com sucesso.',
+                className: 'bg-[#ff8c00] text-white border-none',
+            });
+
+            // Force header to refresh
+            window.dispatchEvent(new CustomEvent('userProfileUpdated'));
+
+        } catch (error: any) {
+            toast({
+                variant: 'destructive',
+                title: 'Erro ao fazer upload',
+                description: error.message || 'Tente novamente mais tarde.',
+            });
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     const handleSave = async () => {
         if (!userId) return;
@@ -130,10 +188,19 @@ export default function ProfilePage() {
                             {getInitials(fullName)}
                         </AvatarFallback>
                     </Avatar>
+                    <input
+                        type="file"
+                        id="avatar-upload"
+                        accept="image/*"
+                        onChange={handleAvatarUpload}
+                        className="hidden"
+                    />
                     <Button
                         size="icon"
                         variant="outline"
                         className="absolute bottom-0 right-0 rounded-full h-8 w-8 bg-background"
+                        onClick={() => document.getElementById('avatar-upload')?.click()}
+                        disabled={isSaving}
                     >
                         <Upload className="h-4 w-4" />
                     </Button>

@@ -165,10 +165,15 @@ export function Header() {
           .eq('id', user.id)
           .single();
 
+        // Priority fallback for avatar: db → auth metadata → null
+        const dbAvatar = userData?.avatar_url;
+        const authAvatar = user.user_metadata?.avatar_url || user.user_metadata?.picture;
+        const finalAvatar = dbAvatar || authAvatar || null;
+
         if (userData) {
           setUserProfile({
             full_name: userData.name || user.user_metadata?.full_name || 'Usuário',
-            avatar_url: userData.avatar_url || null,
+            avatar_url: finalAvatar,
             email: userData.email || user.email || '',
             business_type: user.user_metadata?.business_type || null
           });
@@ -189,7 +194,7 @@ export function Header() {
           // Fallback to auth metadata if table query fails
           setUserProfile({
             full_name: user.user_metadata?.full_name || 'Usuário',
-            avatar_url: user.user_metadata?.avatar_url || null,
+            avatar_url: authAvatar,
             email: user.email || '',
             business_type: user.user_metadata?.business_type || null
           });
