@@ -266,8 +266,12 @@ export function Header() {
   let displayUnitName = 'Unidade';
 
   if (userProfile?.business_type === 'personal') {
-    displayUnitName = userProfile.full_name ? `Personal ${userProfile.full_name.split(' ')[0]}` : 'Personal';
+    displayUnitName = userProfile.full_name ? `Personal ${userProfile.full_name}` : 'Personal';
   } else {
+    // If we have units, use the selected one. If undefined (empty array/loading), default to specific fallback.
+    // If units exist but somehow selectedUnit is undefined, maybe pick first.
+    // Logic: If NO units array data, fallback to 'Minha Unidade' or Organization Name if we had it.
+    // For now 'Minha Unidade' is a safe semantic default for single-unit business unless we fetch org name separately.
     displayUnitName = selectedUnit?.name || 'Minha Unidade';
   }
 
