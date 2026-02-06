@@ -38,15 +38,20 @@ export function UnitProvider({ children }: { children: ReactNode }) {
                     return;
                 }
 
-                // Fetch units for this organization
+                // Fetch units for this organization (NO FILTER ON ACTIVE)
                 const { data: units, error } = await supabase
                     .from('units')
                     .select('*')
-                    .eq('organization_id', userData.organization_id)
-                    .eq('active', true);
+                    .eq('organization_id', userData.organization_id);
 
-                if (error || !units || units.length === 0) {
-                    console.error('No units found:', error);
+                // Even if there's an error, try to proceed if we have units
+                if (error) {
+                    console.warn('Error fetching units (proceeding anyway):', error);
+                }
+
+                // If no units exist, we can't proceed
+                if (!units || units.length === 0) {
+                    console.error('No units found for organization:', userData.organization_id);
                     setIsLoading(false);
                     return;
                 }
@@ -58,14 +63,9 @@ export function UnitProvider({ children }: { children: ReactNode }) {
                 if (storedUnitId && storedUnitExists) {
                     // Use stored unit if it still exists
                     setCurrentUnitIdState(storedUnitId);
-                } else if (units.length === 1) {
-                    // Auto-select if only one unit exists
-                    const unitId = units[0].id;
-                    setCurrentUnitIdState(unitId);
-                    localStorage.setItem('currentUnitId', unitId);
                 } else {
-                    // Multiple units: select first active one
-                    const activeUnit = units.find(u => u.active) || units[0];
+                    // Auto-select the first unit (or first active one if available)
+                    const activeUnit = units.find(u => u.active === true) || units[0];
                     setCurrentUnitIdState(activeUnit.id);
                     localStorage.setItem('currentUnitId', activeUnit.id);
                 }
