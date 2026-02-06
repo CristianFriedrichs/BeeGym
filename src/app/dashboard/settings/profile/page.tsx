@@ -21,6 +21,8 @@ export default function ProfilePage() {
     const [bio, setBio] = useState('');
     const [avatarUrl, setAvatarUrl] = useState('');
     const [userId, setUserId] = useState<string | null>(null);
+    const [emailNotifications, setEmailNotifications] = useState(true);
+    const [whatsappNotifications, setWhatsappNotifications] = useState(false);
     const { toast } = useToast();
     const supabase = createClient();
 
@@ -190,6 +192,45 @@ export default function ProfilePage() {
                             )}
                             Salvar Alterações
                         </Button>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* Notification Preferences Card */}
+            <Card>
+                <CardHeader>
+                    <CardTitle>Preferências de Notificação</CardTitle>
+                    <CardDescription>Escolha como você deseja receber alertas importantes do sistema.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {/* Email Notifications */}
+                    <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                        <div>
+                            <Label htmlFor="email-notifications" className="font-medium">Notificações por E-mail</Label>
+                            <p className="text-sm text-muted-foreground">
+                                Receber resumos e alertas via e-mail
+                            </p>
+                        </div>
+                        <Switch
+                            id="email-notifications"
+                            checked={emailNotifications}
+                            onCheckedChange={setEmailNotifications}
+                        />
+                    </div>
+
+                    {/* WhatsApp Notifications */}
+                    <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                        <div>
+                            <Label htmlFor="whatsapp-notifications" className="font-medium">Notificações por WhatsApp</Label>
+                            <p className="text-sm text-muted-foreground">
+                                Receber avisos urgentes via WhatsApp
+                            </p>
+                        </div>
+                        <Switch
+                            id="whatsapp-notifications"
+                            checked={whatsappNotifications}
+                            onCheckedChange={setWhatsappNotifications}
+                        />
                     </div>
                 </CardContent>
             </Card>

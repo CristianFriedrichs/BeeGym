@@ -23,13 +23,6 @@ import { cn } from '@/lib/utils';
 
 const menuSections = [
     {
-        title: 'MINHA CONTA',
-        items: [
-            { label: 'Perfil', href: '/dashboard/settings/profile', icon: User },
-            { label: 'Notificações', href: '/dashboard/settings/notifications', icon: Bell },
-        ],
-    },
-    {
         title: 'CONFIGURAÇÕES DO NEGÓCIO',
         items: [
             { label: 'Geral', href: '/dashboard/settings/general', icon: Settings },
