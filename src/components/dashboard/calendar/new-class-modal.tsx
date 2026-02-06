@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useUnit } from '@/context/UnitContext';
+import { useOrganizationSettings } from '@/hooks/use-organization-settings';
 import { DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -18,12 +19,14 @@ import { initialClients as students } from '@/lib/mock-data';
 import { useToast } from '@/hooks/use-toast';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Badge } from '@/components/ui/badge';
+import { calculateEndTime, validateBusinessHours, hasConflict, countBookingsInSlot } from '@/lib/scheduling-validation';
 
 // Simplified student data for this component
 const activeStudents = students.filter(s => s.status === 'Ativo').map(s => ({ value: s.id.toString(), label: s.name, avatar: s.avatar }));
 
 export function NewClassModal({ setIsOpen }: { setIsOpen: (open: boolean) => void }) {
   const { toast } = useToast();
+  const { settings, isLoading: settingsLoading, getDefaultDuration } = useOrganizationSettings();
   const [classType, setClassType] = useState<'individual' | 'group' | 'open'>('individual');
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<string[]>([]);
@@ -36,8 +39,16 @@ export function NewClassModal({ setIsOpen }: { setIsOpen: (open: boolean) => voi
   const [className, setClassName] = useState('');
   const { currentUnitId } = useUnit();
 
+  // Auto-fill default duration when settings load
+  useEffect(() => {
+    if (!settingsLoading && settings) {
+      const defaultDuration = getDefaultDuration();
+      setDuration(defaultDuration.toString());
+    }
+  }, [settingsLoading, settings, getDefaultDuration]);
 
-  const handleSave = () => {
+
+  const handleSave = async () => {
     if (!currentUnitId) {
       toast({ title: 'Nenhuma unidade selecionada', description: 'Ocorreu um erro ao identificar a unidade ativa.', variant: 'destructive' });
       return;
@@ -75,6 +86,55 @@ export function NewClassModal({ setIsOpen }: { setIsOpen: (open: boolean) => voi
       return;
     }
 
+    // Calculate end time
+    const endTime = calculateEndTime(time, Number(duration));
+
+    // VALIDATION 1: Check if within opening hours
+    const businessHoursValidation = validateBusinessHours(date, time, endTime, settings.opening_hours);
+    if (!businessHoursValidation.valid) {
+      toast({
+        title: 'Horário Inválido',
+        description: businessHoursValidation.message || 'O horário selecionado está fora do expediente.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Fetch existing bookings from localStorage (TODO: Replace with Supabase query)
+    const existingBookings = JSON.parse(localStorage.getItem('calendar_classes') || '[]');
+
+    // VALIDATION 2: Check for conflicts (if concurrent bookings not allowed)
+    if (!settings.allow_concurrent_bookings) {
+      const conflictCheck = hasConflict(
+        { date, startTime: time, endTime },
+        existingBookings
+      );
+
+      if (conflictCheck.hasConflict) {
+        toast({
+          title: 'Conflito de Horário',
+          description: 'Você já tem um aluno neste horário.',
+          variant: 'destructive',
+        });
+        return;
+      }
+    }
+
+    // VALIDATION 3: Check capacity (if concurrent bookings allowed)
+    if (settings.allow_concurrent_bookings) {
+      const currentCount = countBookingsInSlot(date, time, endTime, existingBookings);
+
+      if (currentCount >= settings.max_capacity_per_slot) {
+        toast({
+          title: 'Capacidade Máxima Atingida',
+          description: `Este horário já atingiu a capacidade máxima de ${settings.max_capacity_per_slot} aluno(s).`,
+          variant: 'destructive',
+        });
+        return;
+      }
+    }
+
+    // All validations passed - proceed with save
     let clientName = className;
     let classColor = 'bg-blue-500'; // Default for open group
 
@@ -152,11 +212,57 @@ export function NewClassModal({ setIsOpen }: { setIsOpen: (open: boolean) => voi
     }
   };
 
-  const timeSlots: string[] = [];
-  for (let h = 6; h < 23; h++) {
-    timeSlots.push(`${String(h).padStart(2, '0')}:00`);
-    timeSlots.push(`${String(h).padStart(2, '0')}:30`);
-  }
+  // Generate time slots based on opening hours for selected date
+  const getAvailableTimeSlots = (): string[] => {
+    if (!date || !settings.opening_hours) {
+      // Fallback to default time slots if no opening hours configured
+      const defaultSlots: string[] = [];
+      for (let h = 6; h < 23; h++) {
+        defaultSlots.push(`${String(h).padStart(2, '0')}:00`);
+        defaultSlots.push(`${String(h).padStart(2, '0')}:30`);
+      }
+      return defaultSlots;
+    }
+
+    const dayOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][date.getDay()];
+    const daySettings = settings.opening_hours[dayOfWeek];
+
+    if (!daySettings || !daySettings.open) {
+      return []; // No slots available if day is closed
+    }
+
+    // Generate slots from opening to closing time
+    const slots: string[] = [];
+    const [startHour, startMin] = daySettings.start.split(':').map(Number);
+    const [endHour, endMin] = daySettings.end.split(':').map(Number);
+
+    const startMinutes = startHour * 60 + startMin;
+    const endMinutes = endHour * 60 + endMin;
+
+    for (let minutes = startMinutes; minutes < endMinutes; minutes += 30) {
+      const hours = Math.floor(minutes / 60);
+      const mins = minutes % 60;
+      slots.push(`${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`);
+    }
+
+    return slots;
+  };
+
+  const timeSlots = getAvailableTimeSlots();
+
+  // Get opening hours info for selected date
+  const getOpeningHoursInfo = (): string => {
+    if (!date || !settings.opening_hours) return '';
+
+    const dayOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][date.getDay()];
+    const daySettings = settings.opening_hours[dayOfWeek];
+
+    if (!daySettings || !daySettings.open) {
+      return 'Fechado neste dia';
+    }
+
+    return `Horário de atendimento: ${daySettings.start} - ${daySettings.end}`;
+  };
 
   const handleSelectGroupMember = (studentId: string) => {
     setSelectedGroup(prev => prev.includes(studentId) ? prev.filter(s => s !== studentId) : [...prev, studentId]);
@@ -280,31 +386,44 @@ export function NewClassModal({ setIsOpen }: { setIsOpen: (open: boolean) => voi
           <div className="space-y-2">
             <Label>Horário de Início</Label>
             <Select value={time} onValueChange={setTime}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Selecione um horário" />
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o horário" />
               </SelectTrigger>
               <SelectContent>
-                {timeSlots.map(slot => (
-                  <SelectItem key={slot} value={slot}>{slot}</SelectItem>
-                ))}
+                {timeSlots.length === 0 ? (
+                  <SelectItem value="closed" disabled>Fechado neste dia</SelectItem>
+                ) : (
+                  timeSlots.map((slot) => (
+                    <SelectItem key={slot} value={slot}>
+                      {slot}
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
+            {date && (
+              <p className="text-xs text-muted-foreground mt-1">
+                {getOpeningHoursInfo()}
+              </p>
+            )}
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label>Duração (minutos)</Label>
-            <Select value={duration} onValueChange={setDuration}>
-              <SelectTrigger><SelectValue placeholder="Duração" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="30">30 minutos</SelectItem>
-                <SelectItem value="45">45 minutos</SelectItem>
-                <SelectItem value="60">60 minutos</SelectItem>
-                <SelectItem value="90">90 minutos</SelectItem>
-                <SelectItem value="120">120 minutos</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label htmlFor="duration">Duração (minutos)</Label>
+            <Input
+              id="duration"
+              type="number"
+              value={duration}
+              onChange={(e) => setDuration(e.target.value)}
+              placeholder="60"
+            />
+            {settings && (
+              <p className="text-xs text-muted-foreground">
+                Duração padrão: {settings.default_session_duration} minutos
+              </p>
+            )}
           </div>
           <div className="space-y-2">
             <Label>Local</Label>
