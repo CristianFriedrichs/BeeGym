@@ -11,6 +11,8 @@ import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { NewWorkoutModal } from './modals/new-workout-modal';
+import { NewClassModal } from './modals/new-class-modal';
 
 interface LiveEvent {
     id: string;
@@ -76,6 +78,8 @@ export function LiveClassCard() {
     const [currentEventIndex, setCurrentEventIndex] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [checkingInIds, setCheckingInIds] = useState<Set<string>>(new Set());
+    const [workoutModalOpen, setWorkoutModalOpen] = useState(false);
+    const [classModalOpen, setClassModalOpen] = useState(false);
     const supabase = createClient();
     const router = useRouter();
     const { toast } = useToast();
@@ -238,14 +242,14 @@ export function LiveClassCard() {
                     </div>
                     <div className="flex gap-3 mt-2">
                         <Button
-                            onClick={() => console.log('Novo Treino clicked')}
+                            onClick={() => setWorkoutModalOpen(true)}
                             className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-6 py-2 rounded-lg shadow-sm"
                         >
                             <Plus className="mr-2 h-4 w-4" />
                             + Novo Treino
                         </Button>
                         <Button
-                            onClick={() => console.log('Nova Aula clicked')}
+                            onClick={() => setClassModalOpen(true)}
                             className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-6 py-2 rounded-lg shadow-sm"
                         >
                             <Plus className="mr-2 h-4 w-4" />
