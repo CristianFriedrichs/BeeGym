@@ -32,6 +32,10 @@ const settingsSchema = z.object({
         start: z.string(),
         end: z.string()
     })).optional(),
+    // Scheduling configuration
+    allow_concurrent_bookings: z.boolean().default(false),
+    max_capacity_per_slot: z.number().min(1).max(50).default(1),
+    default_session_duration: z.number().min(15).max(240).default(60),
 });
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
@@ -65,12 +69,16 @@ export default function GeneralSettingsPage() {
         resolver: zodResolver(settingsSchema),
         defaultValues: {
             has_physical_location: true,
-            opening_hours: DEFAULT_HOURS
+            opening_hours: DEFAULT_HOURS,
+            allow_concurrent_bookings: false,
+            max_capacity_per_slot: 1,
+            default_session_duration: 60,
         }
     });
 
     const { register, handleSubmit, setValue, watch, formState: { errors } } = form;
     const hasLocation = watch('has_physical_location');
+    const allowConcurrent = watch('allow_concurrent_bookings');
     const openingHours = watch('opening_hours') || DEFAULT_HOURS;
 
     const formatDocument = (value: string) => {
@@ -130,6 +138,9 @@ export default function GeneralSettingsPage() {
                         address_city: org.address_city || '',
                         address_state: org.address_state || '',
                         opening_hours: (org.opening_hours as any) || DEFAULT_HOURS,
+                        allow_concurrent_bookings: org.allow_concurrent_bookings ?? false,
+                        max_capacity_per_slot: org.max_capacity_per_slot || 1,
+                        default_session_duration: org.default_session_duration || 60,
                     });
                 }
             } catch (err) {
@@ -217,6 +228,9 @@ export default function GeneralSettingsPage() {
                 address_state: data.address_state,
                 address_zip: data.address_zip,
                 opening_hours: data.opening_hours,
+                allow_concurrent_bookings: data.allow_concurrent_bookings,
+                max_capacity_per_slot: data.max_capacity_per_slot,
+                default_session_duration: data.default_session_duration,
                 updated_at: new Date().toISOString()
             };
 
@@ -390,53 +404,123 @@ export default function GeneralSettingsPage() {
                 </TabsContent>
 
                 <TabsContent value="hours">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Horários de Atendimento</CardTitle>
-                            <CardDescription>Defina quando você costuma atender.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            {DAYS_OF_WEEK.map((day) => (
-                                <div key={day.key} className="flex items-center justify-between py-2 border-b last:border-0">
-                                    <div className="flex items-center space-x-4 w-40">
-                                        <Switch
-                                            checked={openingHours[day.key]?.open}
-                                            onCheckedChange={(checked) => {
-                                                const newHours = { ...openingHours };
-                                                if (!newHours[day.key]) newHours[day.key] = { open: checked, start: '08:00', end: '18:00' };
-                                                else newHours[day.key].open = checked;
-                                                setValue('opening_hours', newHours);
-                                            }}
-                                        />
-                                        <Label className="font-medium">{day.label}</Label>
+                    <div className="space-y-6">
+                        {/* Opening Hours Card */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Horários de Atendimento</CardTitle>
+                                <CardDescription>Defina quando você costuma atender seus alunos.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                                {DAYS_OF_WEEK.map((day) => (
+                                    <div key={day.key} className="flex items-center justify-between py-3 border-b last:border-0">
+                                        <div className="flex items-center space-x-4 w-48">
+                                            <Switch
+                                                checked={openingHours[day.key]?.open}
+                                                onCheckedChange={(checked) => {
+                                                    const newHours = { ...openingHours };
+                                                    if (!newHours[day.key]) newHours[day.key] = { open: checked, start: '08:00', end: '18:00' };
+                                                    else newHours[day.key].open = checked;
+                                                    setValue('opening_hours', newHours);
+                                                }}
+                                            />
+                                            <Label className="font-medium text-base cursor-pointer">
+                                                {day.label}
+                                            </Label>
+                                        </div>
+                                        <div className={`flex items-center gap-3 ${!openingHours[day.key]?.open ? 'opacity-30 pointer-events-none' : ''}`}>
+                                            <Input
+                                                type="time"
+                                                className="w-28"
+                                                value={openingHours[day.key]?.start || '08:00'}
+                                                onChange={(e) => {
+                                                    const newHours = { ...openingHours };
+                                                    newHours[day.key].start = e.target.value;
+                                                    setValue('opening_hours', newHours);
+                                                }}
+                                            />
+                                            <span className="text-sm text-muted-foreground font-medium">até</span>
+                                            <Input
+                                                type="time"
+                                                className="w-28"
+                                                value={openingHours[day.key]?.end || '18:00'}
+                                                onChange={(e) => {
+                                                    const newHours = { ...openingHours };
+                                                    newHours[day.key].end = e.target.value;
+                                                    setValue('opening_hours', newHours);
+                                                }}
+                                            />
+                                        </div>
                                     </div>
-                                    <div className={`flex items-center gap-2 ${!openingHours[day.key]?.open ? 'opacity-30 pointer-events-none' : ''}`}>
-                                        <Input
-                                            type="time"
-                                            className="w-24"
-                                            value={openingHours[day.key]?.start || '08:00'}
-                                            onChange={(e) => {
-                                                const newHours = { ...openingHours };
-                                                newHours[day.key].start = e.target.value;
-                                                setValue('opening_hours', newHours);
-                                            }}
-                                        />
-                                        <span className="text-sm text-muted-foreground">até</span>
-                                        <Input
-                                            type="time"
-                                            className="w-24"
-                                            value={openingHours[day.key]?.end || '18:00'}
-                                            onChange={(e) => {
-                                                const newHours = { ...openingHours };
-                                                newHours[day.key].end = e.target.value;
-                                                setValue('opening_hours', newHours);
-                                            }}
-                                        />
+                                ))}
+                            </CardContent>
+                        </Card>
+
+                        {/* Scheduling Rules Card */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Regras de Agendamento</CardTitle>
+                                <CardDescription>Configure como os treinos podem ser agendados.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                {/* Concurrent Bookings Toggle */}
+                                <div className="flex items-start justify-between space-x-4 pb-4 border-b">
+                                    <div className="flex-1">
+                                        <Label htmlFor="allow_concurrent" className="text-base font-medium">
+                                            Permitir mais de um aluno por horário?
+                                        </Label>
+                                        <p className="text-sm text-muted-foreground mt-1">
+                                            Se ativado, você poderá agendar múltiplos alunos no mesmo horário (aulas em grupo).
+                                        </p>
                                     </div>
+                                    <Switch
+                                        id="allow_concurrent"
+                                        checked={allowConcurrent}
+                                        onCheckedChange={(checked) => setValue('allow_concurrent_bookings', checked)}
+                                    />
                                 </div>
-                            ))}
-                        </CardContent>
-                    </Card>
+
+                                {/* Capacity Input (Conditional) */}
+                                {allowConcurrent && (
+                                    <div className="space-y-2 pb-4 border-b">
+                                        <Label htmlFor="max_capacity" className="text-base font-medium">
+                                            Capacidade máxima por horário
+                                        </Label>
+                                        <Input
+                                            id="max_capacity"
+                                            type="number"
+                                            min="1"
+                                            max="50"
+                                            {...register('max_capacity_per_slot', { valueAsNumber: true })}
+                                            className="w-32"
+                                        />
+                                        <p className="text-sm text-muted-foreground">
+                                            Número máximo de alunos que podem ser agendados no mesmo horário.
+                                        </p>
+                                    </div>
+                                )}
+
+                                {/* Default Session Duration */}
+                                <div className="space-y-2">
+                                    <Label htmlFor="session_duration" className="text-base font-medium">
+                                        Tempo padrão de treino (minutos)
+                                    </Label>
+                                    <Input
+                                        id="session_duration"
+                                        type="number"
+                                        min="15"
+                                        max="240"
+                                        step="15"
+                                        {...register('default_session_duration', { valueAsNumber: true })}
+                                        className="w-32"
+                                    />
+                                    <p className="text-sm text-muted-foreground">
+                                        Duração padrão de cada sessão de treino. Esse valor será usado ao criar novos agendamentos.
+                                    </p>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
                 </TabsContent>
             </Tabs>
         </div>

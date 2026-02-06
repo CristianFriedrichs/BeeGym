@@ -30,6 +30,9 @@ model Organization {
   addressCity          String?      @map("address_city")
   addressState         String?      @map("address_state")
   openingHours         Json?        @map("opening_hours")
+  allowConcurrentBookings Boolean   @default(false) @map("allow_concurrent_bookings")
+  maxCapacityPerSlot   Int          @default(1) @map("max_capacity_per_slot")
+  defaultSessionDuration Int        @default(60) @map("default_session_duration")
   createdAt            DateTime     @default(now()) @map("created_at")
   updatedAt            DateTime     @updatedAt @map("updated_at")
 
