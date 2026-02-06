@@ -183,7 +183,7 @@ export default function Dashboard() {
           <p className="text-muted-foreground mt-1">Visão geral das suas atividades</p>
         </div>
         <Link href="/dashboard/clients/new">
-          <Button className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 py-2.5 rounded-lg shadow-sm flex items-center gap-2">
+          <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-6 py-2.5 rounded-lg shadow-sm flex items-center gap-2">
             <User className="h-4 w-4" />
             + Novo Aluno
           </Button>

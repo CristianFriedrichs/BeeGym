@@ -17,10 +17,16 @@ export default {
     },
     extend: {
       fontFamily: {
-        display: ['var(--font-display)', 'sans-serif'],
-        body: ['var(--font-body)', 'sans-serif'],
+        display: ['Inter', 'var(--font-display)', 'sans-serif'], // Títulos e Logo
+        sans: ['Roboto', 'var(--font-body)', 'sans-serif'],      // Corpo de texto
       },
       colors: {
+        // BeeGym Brand Colors
+        'bee-orange': '#FF8C00',
+        'deep-midnight': '#00173F',
+        'pure-white': '#FFFFFF',
+
+        // Theme Colors (using CSS variables)
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',

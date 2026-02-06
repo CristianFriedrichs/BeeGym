@@ -1,9 +1,16 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@700&family=Roboto:wght@400;500;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
+    /* BeeGym Brand Colors */
+    --bee-orange: 33 100% 50%; /* #FF8C00 */
+    --deep-midnight: 216 100% 12%; /* #00173F */
+    --pure-white: 0 0% 100%; /* #FFFFFF */
+    
     --background: 210 20% 97%; /* #F4F6F8 */
     --foreground: 216 100% 12%; /* #00173F */
 

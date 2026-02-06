@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { BeeGymLogo } from '@/components/ui/beegym-logo';
 
 const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
@@ -33,13 +34,8 @@ export function Sidebar() {
   return (
     <aside className="hidden md:flex w-64 border-r bg-card flex-col">
       <div className="p-6">
-        <Link href="/dashboard" className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <Dumbbell className="h-5 w-5 text-primary-foreground" />
-          </div>
-          <span className="text-xl font-bold text-foreground">
-            <span className="text-primary">Bee</span>Gym
-          </span>
+        <Link href="/dashboard">
+          <BeeGymLogo size="md" variant="light" />
         </Link>
       </div>
 
