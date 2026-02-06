@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { MapPin, Timer, ChevronLeft, ChevronRight, GraduationCap, Dumbbell, Calendar, Plus } from 'lucide-react';
+import { MapPin, Timer, ChevronLeft, ChevronRight, GraduationCap, Dumbbell, Calendar, Plus, Check } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/card';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 interface LiveEvent {
@@ -18,20 +19,22 @@ interface LiveEvent {
     start_time: string;
     end_time: string;
     capacity: number;
-    instructor: {
+    instructor_id: string;
+    instructor?: {
         id: string;
         full_name: string;
         avatar_url: string | null;
-    };
-    unit: {
+    } | null;
+    unit?: {
         id: string;
         name: string;
     } | null;
-    room: {
+    room?: {
         id: string;
         name: string;
     } | null;
     attendees: Array<{
+        id: string;
         student: {
             id: string;
             full_name: string;
@@ -72,8 +75,10 @@ export function LiveClassCard() {
     const [liveEvents, setLiveEvents] = useState<LiveEvent[]>([]);
     const [currentEventIndex, setCurrentEventIndex] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
+    const [checkingInIds, setCheckingInIds] = useState<Set<string>>(new Set());
     const supabase = createClient();
     const router = useRouter();
+    const { toast } = useToast();
 
     const currentEvent = liveEvents[currentEventIndex];
     const elapsedTime = useElapsedTime(currentEvent?.start_time || new Date().toISOString());
@@ -96,25 +101,14 @@ export function LiveClassCard() {
                 const currentTime = now.toTimeString().slice(0, 8); // HH:MM:SS
                 const currentDate = now.toISOString().split('T')[0]; // YYYY-MM-DD
 
-                // Query events happening NOW
+                // Simplified query - fetch events with instructor join
                 const { data: events, error } = await supabase
                     .from('calendar_events')
                     .select(`
-            id,
-            name,
-            event_type,
-            start_time,
-            end_time,
-            date,
-            capacity,
-            instructor:users!instructor_id(id, full_name, avatar_url),
+            *,
+            instructor:users!calendar_events_instructor_id_fkey(id, full_name, avatar_url),
             unit:units(id, name),
-            room:rooms(id, name),
-            attendees:attendance_logs(
-              student:students(id, full_name, avatar_url),
-              status,
-              confirmed_by_user
-            )
+            room:rooms(id, name)
           `)
                     .eq('organization_id', userData.organization_id)
                     .eq('date', currentDate)
@@ -125,12 +119,34 @@ export function LiveClassCard() {
 
                 if (error) {
                     console.error('Error fetching live events:', error);
+                    setLiveEvents([]);
                     return;
                 }
 
-                setLiveEvents(events || []);
+                // Fetch attendees separately for each event
+                const eventsWithAttendees = await Promise.all(
+                    (events || []).map(async (event) => {
+                        const { data: attendees } = await supabase
+                            .from('attendance_logs')
+                            .select(`
+                id,
+                status,
+                confirmed_by_user,
+                student:students(id, full_name, avatar_url)
+              `)
+                            .eq('event_id', event.id);
+
+                        return {
+                            ...event,
+                            attendees: attendees || []
+                        };
+                    })
+                );
+
+                setLiveEvents(eventsWithAttendees);
             } catch (error) {
                 console.error('Error in fetchLiveEvents:', error);
+                setLiveEvents([]);
             } finally {
                 setIsLoading(false);
             }
@@ -142,6 +158,51 @@ export function LiveClassCard() {
         const interval = setInterval(fetchLiveEvents, 30000);
         return () => clearInterval(interval);
     }, [supabase]);
+
+    // Quick check-in handler
+    const handleQuickCheckIn = async (attendanceLogId: string, studentName: string) => {
+        setCheckingInIds(prev => new Set(prev).add(attendanceLogId));
+
+        try {
+            const { error } = await supabase
+                .from('attendance_logs')
+                .update({
+                    status: 'PRESENT',
+                    confirmed_by_user: true
+                })
+                .eq('id', attendanceLogId);
+
+            if (error) throw error;
+
+            // Optimistic UI update
+            setLiveEvents(prev => prev.map(event => ({
+                ...event,
+                attendees: event.attendees.map(att =>
+                    att.id === attendanceLogId
+                        ? { ...att, status: 'PRESENT', confirmed_by_user: true }
+                        : att
+                )
+            })));
+
+            toast({
+                title: 'Check-in realizado!',
+                description: `${studentName} marcado como presente.`,
+            });
+        } catch (error: any) {
+            console.error('Error checking in:', error);
+            toast({
+                title: 'Erro ao fazer check-in',
+                description: error.message,
+                variant: 'destructive',
+            });
+        } finally {
+            setCheckingInIds(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(attendanceLogId);
+                return newSet;
+            });
+        }
+    };
 
     // Carousel navigation
     const nextEvent = () => {
@@ -192,17 +253,15 @@ export function LiveClassCard() {
     const getEventBadge = (type: 'AULA' | 'TREINO') => {
         if (type === 'AULA') {
             return {
-                variant: 'default' as const,
                 icon: <GraduationCap className="w-3 h-3 mr-1" />,
                 label: 'AULA',
-                className: 'bg-blue-500 hover:bg-blue-600'
+                className: 'bg-blue-500 hover:bg-blue-600 text-white'
             };
         }
         return {
-            variant: 'warning' as const,
             icon: <Dumbbell className="w-3 h-3 mr-1" />,
             label: 'TREINO',
-            className: 'bg-orange-500 hover:bg-orange-600'
+            className: 'bg-orange-500 hover:bg-orange-600 text-white'
         };
     };
 
@@ -221,7 +280,7 @@ export function LiveClassCard() {
                         <span className="px-2.5 py-0.5 rounded-full bg-green-500 text-white text-xs font-bold uppercase tracking-wide">
                             Ao Vivo Agora
                         </span>
-                        <Badge className={cn("text-white", eventBadge.className)}>
+                        <Badge className={eventBadge.className}>
                             {eventBadge.icon}
                             {eventBadge.label}
                         </Badge>
@@ -254,10 +313,10 @@ export function LiveClassCard() {
                 </div>
 
                 {/* Main content */}
-                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
                     {/* Event info */}
-                    <div className="flex-1">
-                        <h2 className="text-2xl font-display font-bold text-foreground mb-2">
+                    <div className="flex-1 min-w-0">
+                        <h2 className="text-2xl font-display font-bold text-foreground mb-2 truncate">
                             {currentEvent.name || 'Aula sem nome'}
                         </h2>
 
@@ -277,7 +336,7 @@ export function LiveClassCard() {
                                 <div>
                                     <p className="text-xs text-muted-foreground">Instrutor</p>
                                     <p className="text-sm font-medium">
-                                        {currentEvent.instructor?.full_name || 'Não definido'}
+                                        {currentEvent.instructor?.full_name || 'Instrutor não definido'}
                                     </p>
                                 </div>
                             </div>
@@ -285,8 +344,8 @@ export function LiveClassCard() {
                             {/* Location */}
                             {currentEvent.unit && (
                                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                    <MapPin className="h-4 w-4" />
-                                    <span>
+                                    <MapPin className="h-4 w-4 flex-shrink-0" />
+                                    <span className="truncate">
                                         {currentEvent.unit.name}
                                         {currentEvent.room && ` - ${currentEvent.room.name}`}
                                     </span>
@@ -296,71 +355,9 @@ export function LiveClassCard() {
                     </div>
 
                     {/* Stats panel */}
-                    <div className="flex items-center gap-6 bg-muted/50 p-4 rounded-2xl border min-w-[300px]">
-                        {/* Students */}
-                        <div className="flex-1">
-                            <p className="text-xs text-muted-foreground uppercase font-semibold mb-2">
-                                Alunos
-                            </p>
-                            <div className="flex -space-x-2 mb-2">
-                                {currentEvent.attendees.slice(0, 5).map((attendee) => (
-                                    <Tooltip key={attendee.student.id}>
-                                        <TooltipTrigger asChild>
-                                            <Avatar
-                                                className={cn(
-                                                    "h-8 w-8 border-2",
-                                                    attendee.status === 'PRESENT'
-                                                        ? "border-green-500"
-                                                        : "border-gray-300"
-                                                )}
-                                            >
-                                                <AvatarImage src={attendee.student.avatar_url || undefined} />
-                                                <AvatarFallback className="text-xs">
-                                                    {attendee.student.full_name
-                                                        ?.split(' ')
-                                                        .map(n => n[0])
-                                                        .join('')
-                                                        .toUpperCase() || '?'}
-                                                </AvatarFallback>
-                                            </Avatar>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            <p>{attendee.student.full_name}</p>
-                                            <p className="text-xs text-muted-foreground">
-                                                {attendee.status === 'PRESENT' ? '✓ Presente' : 'Agendado'}
-                                            </p>
-                                        </TooltipContent>
-                                    </Tooltip>
-                                ))}
-                                {currentEvent.attendees.length > 5 && (
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <div className="h-8 w-8 rounded-full border-2 border-card bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground">
-                                                +{currentEvent.attendees.length - 5}
-                                            </div>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            <ul className="text-sm space-y-1">
-                                                {currentEvent.attendees.slice(5).map(attendee => (
-                                                    <li key={attendee.student.id}>
-                                                        {attendee.student.full_name}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </TooltipContent>
-                                    </Tooltip>
-                                )}
-                            </div>
-                            <p className="text-xs font-bold text-foreground">
-                                {presentStudents.length}/{currentEvent.attendees.length} Presentes
-                            </p>
-                        </div>
-
-                        {/* Divider */}
-                        <div className="h-16 w-px bg-border"></div>
-
+                    <div className="flex items-center gap-4 bg-muted/50 p-4 rounded-2xl border w-full lg:w-auto">
                         {/* Timer */}
-                        <div className="text-center min-w-[100px]">
+                        <div className="text-center">
                             <p className="text-xs text-muted-foreground uppercase font-semibold mb-1">
                                 Tempo Decorrido
                             </p>
@@ -369,8 +366,70 @@ export function LiveClassCard() {
                                 {elapsedTime.formatted}
                             </div>
                         </div>
+
+                        <div className="h-16 w-px bg-border"></div>
+
+                        {/* Students count */}
+                        <div className="text-center">
+                            <p className="text-xs text-muted-foreground uppercase font-semibold mb-1">
+                                Presença
+                            </p>
+                            <p className="text-2xl font-bold">
+                                {presentStudents.length}/{currentEvent.attendees.length}
+                            </p>
+                        </div>
                     </div>
                 </div>
+
+                {/* Students list with quick check-in */}
+                {currentEvent.attendees.length > 0 && (
+                    <div className="border-t pt-4">
+                        <p className="text-sm font-semibold mb-3">Alunos nesta aula:</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-[200px] overflow-y-auto">
+                            {currentEvent.attendees.map((attendee) => (
+                                <div
+                                    key={attendee.id}
+                                    className={cn(
+                                        "flex items-center justify-between gap-2 p-2 rounded-lg border",
+                                        attendee.status === 'PRESENT' ? "bg-green-50 border-green-200" : "bg-background"
+                                    )}
+                                >
+                                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                                        <Avatar className="h-8 w-8 flex-shrink-0">
+                                            <AvatarImage src={attendee.student.avatar_url || undefined} />
+                                            <AvatarFallback className="text-xs">
+                                                {attendee.student.full_name
+                                                    ?.split(' ')
+                                                    .map(n => n[0])
+                                                    .join('')
+                                                    .toUpperCase() || '?'}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <span className="text-sm font-medium truncate">
+                                            {attendee.student.full_name}
+                                        </span>
+                                    </div>
+                                    {attendee.status === 'PRESENT' ? (
+                                        <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300 flex-shrink-0">
+                                            <Check className="w-3 h-3 mr-1" />
+                                            Presente
+                                        </Badge>
+                                    ) : (
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => handleQuickCheckIn(attendee.id, attendee.student.full_name)}
+                                            disabled={checkingInIds.has(attendee.id)}
+                                            className="flex-shrink-0"
+                                        >
+                                            {checkingInIds.has(attendee.id) ? 'Confirmando...' : 'Check-in'}
+                                        </Button>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </section>
         </TooltipProvider>
     );
