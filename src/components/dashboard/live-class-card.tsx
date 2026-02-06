@@ -233,17 +233,25 @@ export function LiveClassCard() {
                     <div>
                         <h3 className="font-semibold text-lg">Nenhuma atividade agora</h3>
                         <p className="text-sm text-muted-foreground mt-1">
-                            Que tal planejar o próximo treino?
+                            Que tal planejar a próxima atividade?
                         </p>
                     </div>
-                    <Button
-                        variant="outline"
-                        onClick={() => router.push('/dashboard/agenda')}
-                        className="mt-2"
-                    >
-                        <Plus className="mr-2 h-4 w-4" />
-                        Agendar Aula
-                    </Button>
+                    <div className="flex gap-3 mt-2">
+                        <Button
+                            onClick={() => console.log('Novo Treino clicked')}
+                            className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 py-2 rounded-lg shadow-sm"
+                        >
+                            <Plus className="mr-2 h-4 w-4" />
+                            + Novo Treino
+                        </Button>
+                        <Button
+                            onClick={() => console.log('Nova Aula clicked')}
+                            className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 py-2 rounded-lg shadow-sm"
+                        >
+                            <Plus className="mr-2 h-4 w-4" />
+                            + Nova Aula
+                        </Button>
+                    </div>
                 </div>
             </Card>
         );
