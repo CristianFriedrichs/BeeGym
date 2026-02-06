@@ -20,6 +20,9 @@ export const studentSchema = z.object({
     unitMemberships: z.array(z.string()).optional(),
     plan: z.object({
         planId: z.string().min(1, 'Por favor, selecione um plano.'),
+        planType: z.enum(['RECURRING', 'PACKAGE']).optional(),
+        frequencyLimit: z.number().optional(), // e.g., 2 for 2x/week
+        totalCredits: z.number().optional(), // for package plans
         discount: z.object({
             type: z.enum(['PERCENT', 'ABSOLUTE']),
             value: z.number().min(0, 'O valor deve ser positivo'),
@@ -27,8 +30,11 @@ export const studentSchema = z.object({
         dueDate: z.date(),
     }),
     scheduling: z.object({
-        date: z.date().optional(),
-        time: z.string().optional(),
+        mode: z.enum(['fixed', 'free']).default('free'),
+        fixedSchedule: z.array(z.object({
+            dayOfWeek: z.string(), // 'monday', 'tuesday', etc.
+            time: z.string(), // 'HH:MM'
+        })).optional(),
         location: z.string().optional(),
     }).optional(),
     reminders: z.object({
