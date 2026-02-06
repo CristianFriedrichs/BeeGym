@@ -177,14 +177,9 @@ export default function Dashboard() {
       </Dialog>
 
       <TooltipProvider>
-        {/* Live Class Card - Placeholder logic for now since we need live data */}
-        {isClient && liveClass && (
-          <LiveClassCard
-            liveClass={liveClass}
-            getIconForClass={getIconForClass}
-            liveClassStudents={[]} // Mocked empty for now as it requires another service call
-          />
-        )}
+        {/* Live Class Card - Now self-contained with Supabase integration */}
+        {isClient && <LiveClassCard />}
+
 
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
           {isLoading ? (
