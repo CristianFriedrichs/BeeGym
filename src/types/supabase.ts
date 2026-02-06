@@ -461,25 +461,61 @@ export type Database = {
             }
             organizations: {
                 Row: {
-                    business_type: Database["public"]["Enums"]["BusinessType"]
+                    business_type: Database["public"]["Enums"]["BusinessType"] | null
                     created_at: string
                     id: string
                     name: string
                     updated_at: string
+                    document: string | null
+                    address_line1: string | null
+                    address_number: string | null
+                    address_neighborhood: string | null
+                    address_city: string | null
+                    address_state: string | null
+                    address_zip: string | null
+                    has_physical_location: boolean | null
+                    onboarding_completed: boolean | null
+                    contact_email: string | null
+                    opening_hours: Json | null
+                    social_media: Json | null
                 }
                 Insert: {
-                    business_type: Database["public"]["Enums"]["BusinessType"]
+                    business_type: Database["public"]["Enums"]["BusinessType"] | null
                     created_at?: string
                     id: string
                     name: string
                     updated_at: string
+                    document?: string | null
+                    address_line1?: string | null
+                    address_number?: string | null
+                    address_neighborhood?: string | null
+                    address_city?: string | null
+                    address_state?: string | null
+                    address_zip?: string | null
+                    has_physical_location?: boolean | null
+                    onboarding_completed?: boolean | null
+                    contact_email?: string | null
+                    opening_hours?: Json | null
+                    social_media?: Json | null
                 }
                 Update: {
-                    business_type?: Database["public"]["Enums"]["BusinessType"]
+                    business_type?: Database["public"]["Enums"]["BusinessType"] | null
                     created_at?: string
                     id?: string
                     name?: string
                     updated_at?: string
+                    document?: string | null
+                    address_line1?: string | null
+                    address_number?: string | null
+                    address_neighborhood?: string | null
+                    address_city?: string | null
+                    address_state?: string | null
+                    address_zip?: string | null
+                    has_physical_location?: boolean | null
+                    onboarding_completed?: boolean | null
+                    contact_email?: string | null
+                    opening_hours?: Json | null
+                    social_media?: Json | null
                 }
                 Relationships: []
             }
