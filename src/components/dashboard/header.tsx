@@ -22,7 +22,8 @@ import {
   Building,
   LogOut,
   UserCircle,
-  Loader2
+  Loader2,
+  User
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useToast } from "@/hooks/use-toast"
@@ -42,7 +43,7 @@ const translations = {
     portuguese: 'Português',
     english: 'English (US)',
     spanish: 'Español',
-    settings: 'Configurações',
+    myProfile: 'Meu Perfil',
     support: 'Suporte',
     logout: 'Sair',
     searchPlaceholder: 'Buscar alunos, aulas ou treinos...',
@@ -58,7 +59,7 @@ const translations = {
     portuguese: 'Português',
     english: 'English (US)',
     spanish: 'Español',
-    settings: 'Settings',
+    myProfile: 'My Profile',
     support: 'Support',
     logout: 'Logout',
     searchPlaceholder: 'Search students, classes, or workouts...',
@@ -74,7 +75,7 @@ const translations = {
     portuguese: 'Português',
     english: 'English (US)',
     spanish: 'Español',
-    settings: 'Configuración',
+    myProfile: 'Mi Perfil',
     support: 'Soporte',
     logout: 'Cerrar Sesión',
     searchPlaceholder: 'Buscar alumnos, clases o entrenamientos...',
@@ -409,7 +410,7 @@ export function Header() {
               </div>
             </div>
             <DropdownMenuSeparator className="sm:hidden" />
-            <DropdownMenuItem asChild><Link href="/dashboard/settings" className="cursor-pointer">{t.settings}</Link></DropdownMenuItem>
+            <DropdownMenuItem asChild><Link href="/dashboard/settings/profile" className="cursor-pointer flex items-center gap-2"><User className="h-4 w-4" />{t.myProfile}</Link></DropdownMenuItem>
             <DropdownMenuItem className="cursor-pointer">{t.support}</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive cursor-pointer group">
