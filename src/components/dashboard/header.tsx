@@ -154,43 +154,55 @@ export function Header() {
     setMounted(true);
     setIsClient(true);
 
-    // Fetch User Profile and Organization Name
+    // Fetch User Profile from public.users table
     async function loadUser() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        // Priority: Meta data or Profile Table
-        const fullName = user.user_metadata?.full_name || 'Usuário';
-        const avatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture || null;
-        const businessType = user.user_metadata?.business_type || null;
-
-        setUserProfile({
-          full_name: fullName,
-          avatar_url: avatarUrl,
-          email: user.email || '',
-          business_type: businessType
-        });
-
-        // Fetch organization name
+        // Fetch from public.users table for real data
         const { data: userData } = await supabase
           .from('users')
-          .select('organization_id')
+          .select('name, avatar_url, email, organization_id')
           .eq('id', user.id)
           .single();
 
-        if (userData?.organization_id) {
-          const { data: org } = await supabase
-            .from('organizations')
-            .select('name')
-            .eq('id', userData.organization_id)
-            .single();
+        if (userData) {
+          setUserProfile({
+            full_name: userData.name || user.user_metadata?.full_name || 'Usuário',
+            avatar_url: userData.avatar_url || null,
+            email: userData.email || user.email || '',
+            business_type: user.user_metadata?.business_type || null
+          });
 
-          if (org) {
-            setOrgName(org.name);
+          // Fetch organization name
+          if (userData.organization_id) {
+            const { data: org } = await supabase
+              .from('organizations')
+              .select('name')
+              .eq('id', userData.organization_id)
+              .single();
+
+            if (org) {
+              setOrgName(org.name);
+            }
           }
+        } else {
+          // Fallback to auth metadata if table query fails
+          setUserProfile({
+            full_name: user.user_metadata?.full_name || 'Usuário',
+            avatar_url: user.user_metadata?.avatar_url || null,
+            email: user.email || '',
+            business_type: user.user_metadata?.business_type || null
+          });
         }
       }
     }
     loadUser();
+
+    // Listen for profile updates from profile page
+    const handleProfileUpdate = () => {
+      loadUser();
+    };
+    window.addEventListener('userProfileUpdated', handleProfileUpdate);
 
     // ... (rest of existing useEffect logic) ... 
 
@@ -234,6 +246,7 @@ export function Header() {
     return () => {
       mediaQuery.removeEventListener('change', handleChange);
       window.removeEventListener('storage-update', syncStateFromStorage);
+      window.removeEventListener('userProfileUpdated', handleProfileUpdate);
     }
   }, [supabase]);
 

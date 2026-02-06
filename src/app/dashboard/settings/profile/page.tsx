@@ -34,22 +34,26 @@ export default function ProfilePage() {
 
                 setUserId(user.id);
 
-                // Get user profile data
-                const { data: userData } = await supabase
+                // Get user profile data from public.users table
+                const { data: userData, error } = await supabase
                     .from('users')
-                    .select('name, avatar_url, bio, professional_title, show_public_profile')
+                    .select('*')
                     .eq('id', user.id)
                     .single();
 
+                if (error) {
+                    console.error('Error fetching user data:', error);
+                    // Fallback to auth metadata if table query fails
+                    setFullName(user.user_metadata?.full_name || user.email?.split('@')[0] || '');
+                    return;
+                }
+
                 if (userData) {
-                    setFullName(userData.name || user.user_metadata?.full_name || '');
+                    setFullName(userData.name || '');
                     setProfessionalTitle(userData.professional_title || '');
                     setBio(userData.bio || '');
                     setAvatarUrl(userData.avatar_url || '');
                     setShowPublicProfile(userData.show_public_profile ?? true);
-                } else {
-                    // Fallback to auth metadata
-                    setFullName(user.user_metadata?.full_name || '');
                 }
             } catch (err) {
                 console.error('Error loading profile:', err);
@@ -72,17 +76,20 @@ export default function ProfilePage() {
                     professional_title: professionalTitle,
                     bio: bio,
                     show_public_profile: showPublicProfile,
-                    updated_at: new Date().toISOString(),
                 })
                 .eq('id', userId);
 
             if (error) throw error;
 
             toast({
-                title: 'Perfil Salvo',
-                description: 'Suas informações foram atualizadas com sucesso.',
+                title: 'Perfil Atualizado!',
+                description: 'Suas informações foram salvas com sucesso.',
                 className: 'bg-[#ff8c00] text-white border-none',
             });
+
+            // Force header to refresh by dispatching custom event
+            window.dispatchEvent(new CustomEvent('userProfileUpdated'));
+
         } catch (error: any) {
             toast({
                 variant: 'destructive',
@@ -92,6 +99,16 @@ export default function ProfilePage() {
         } finally {
             setIsSaving(false);
         }
+    };
+
+    const getInitials = (name: string) => {
+        if (!name) return 'U';
+        return name
+            .split(' ')
+            .map(n => n[0])
+            .join('')
+            .substring(0, 2)
+            .toUpperCase();
     };
 
     if (isLoading) {
@@ -110,7 +127,7 @@ export default function ProfilePage() {
                     <Avatar className="h-32 w-32 border-4 border-background shadow-lg">
                         <AvatarImage src={avatarUrl} alt={fullName} />
                         <AvatarFallback className="text-3xl bg-primary/10 text-primary">
-                            {fullName?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'U'}
+                            {getInitials(fullName)}
                         </AvatarFallback>
                     </Avatar>
                     <Button
