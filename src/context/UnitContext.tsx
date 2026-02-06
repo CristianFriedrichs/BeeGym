@@ -30,10 +30,10 @@ export function UnitProvider({ children }: { children: ReactNode }) {
                 }
                 console.log('[UnitContext] User authenticated:', user.id);
 
-                // Get user's organization
+                // Get user's organization and name
                 const { data: userData, error: userError } = await supabase
                     .from('users')
-                    .select('organization_id')
+                    .select('organization_id, name')
                     .eq('id', user.id)
                     .single();
 
@@ -48,8 +48,8 @@ export function UnitProvider({ children }: { children: ReactNode }) {
                 }
                 console.log('[UnitContext] Organization ID:', userData.organization_id);
 
-                // Fetch units for this organization (NO FILTER ON ACTIVE)
-                const { data: units, error: unitsError } = await supabase
+                // Fetch units for this organization
+                let { data: units, error: unitsError } = await supabase
                     .from('units')
                     .select('*')
                     .eq('organization_id', userData.organization_id);
@@ -58,17 +58,28 @@ export function UnitProvider({ children }: { children: ReactNode }) {
                     console.error('[UnitContext] Error fetching units:', unitsError);
                 }
 
-                console.log('[UnitContext] Fetched units:', units);
-
-                // AGGRESSIVE AUTO-SELECTION: If ANY units exist, select one immediately
+                // --- FALLBACK AUTO-CURA LOGIC ---
+                // If units list is empty but we have an organization ID, create a virtual fallback unit
                 if (!units || units.length === 0) {
-                    console.error('[UnitContext] ❌ NO UNITS FOUND for organization:', userData.organization_id);
-                    setIsLoading(false);
-                    return;
+                    console.warn('[UnitContext] ⚠️ No units found in DB. Activating FALLBACK AUTO-CURA.');
+
+                    const fallbackUnit = {
+                        id: userData.organization_id, // Use Org ID as Unit ID for fallback
+                        name: 'Personal ' + (userData.name || 'User'),
+                        business_type: 'personal',
+                        active: true,
+                        organization_id: userData.organization_id
+                    };
+
+                    units = [fallbackUnit];
+                    console.log('[UnitContext] 🛡️ Fallback unit created:', fallbackUnit);
                 }
+                // --------------------------------
+
+                console.log('[UnitContext] Units to process:', units);
 
                 // FORCE AUTO-SELECTION LOGIC
-                console.log('[UnitContext] 🎯 Found', units.length, 'unit(s). Auto-selecting...');
+                console.log('[UnitContext] 🎯 Found', units!.length, 'unit(s). Auto-selecting...');
 
                 let selectedUnitId: string | null = null;
 
@@ -76,7 +87,8 @@ export function UnitProvider({ children }: { children: ReactNode }) {
                 const storedUnitId = localStorage.getItem('currentUnitId');
                 console.log('[UnitContext] Stored unit ID from localStorage:', storedUnitId);
 
-                const storedUnitExists = storedUnitId ? units.some(u => u.id === storedUnitId) : false;
+                // Verify if stored ID is valid in the current units list
+                const storedUnitExists = storedUnitId ? units!.some((u: any) => u.id === storedUnitId) : false;
 
                 if (storedUnitId && storedUnitExists) {
                     // Use stored unit if it still exists
@@ -84,17 +96,17 @@ export function UnitProvider({ children }: { children: ReactNode }) {
                     selectedUnitId = storedUnitId;
                 } else {
                     // Auto-select the first unit (prioritize active ones if available)
-                    const activeUnit = units.find(u => u.active === true);
-                    const firstUnit = units[0];
+                    const activeUnit = units!.find((u: any) => u.active === true);
+                    const firstUnit = units![0];
 
                     selectedUnitId = activeUnit ? activeUnit.id : firstUnit.id;
-                    console.log('[UnitContext] ✅ Auto-selected unit:', selectedUnitId, '(active:', !!activeUnit, ')');
+                    console.log('[UnitContext] ✅ Auto-selected unit:', selectedUnitId);
 
-                    // IMMEDIATELY save to localStorage
+                    // FORCED PERSISTENCE
                     localStorage.setItem('currentUnitId', selectedUnitId);
                 }
 
-                // SET THE STATE - THIS IS CRITICAL
+                // SET THE STATE
                 if (selectedUnitId) {
                     console.log('[UnitContext] 🚀 Setting currentUnitId state to:', selectedUnitId);
                     setCurrentUnitIdState(selectedUnitId);
@@ -103,6 +115,7 @@ export function UnitProvider({ children }: { children: ReactNode }) {
                 // Store units data for Header display
                 localStorage.setItem('units_data', JSON.stringify(units));
                 console.log('[UnitContext] ✅ Initialization complete. Active unit:', selectedUnitId);
+
             } catch (err) {
                 console.error('[UnitContext] ❌ Fatal error during initialization:', err);
             } finally {
