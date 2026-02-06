@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useUnit } from '@/context/UnitContext';
 import { DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -33,14 +34,7 @@ export function NewClassModal({ setIsOpen }: { setIsOpen: (open: boolean) => voi
   const [capacity, setCapacity] = useState<number | undefined>();
   const [openCommand, setOpenCommand] = useState(false);
   const [className, setClassName] = useState('');
-  const [currentUnitId, setCurrentUnitId] = useState<string | null>(null);
-
-  useEffect(() => {
-    const unitId = localStorage.getItem('currentUnitId');
-    if (unitId) {
-      setCurrentUnitId(unitId);
-    }
-  }, []);
+  const { currentUnitId } = useUnit();
 
 
   const handleSave = () => {

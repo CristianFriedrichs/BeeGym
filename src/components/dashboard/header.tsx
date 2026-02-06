@@ -30,6 +30,8 @@ import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar"
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
+import { useUnit } from '@/context/UnitContext';
+
 const translations = {
   'pt-BR': {
     theme: 'Tema',
@@ -103,7 +105,8 @@ export function Header() {
   const supabase = createClient();
 
   const [units, setUnits] = useState<any[]>([]);
-  const [currentUnitId, setCurrentUnitId] = useState<string | null>(null);
+  const { currentUnitId, setCurrentUnitId } = useUnit();
+  const [orgName, setOrgName] = useState<string | null>(null);
 
   // User Data State
   const [userProfile, setUserProfile] = useState<{
@@ -150,7 +153,7 @@ export function Header() {
     setMounted(true);
     setIsClient(true);
 
-    // Fetch User Profile
+    // Fetch User Profile and Organization Name
     async function loadUser() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -165,6 +168,25 @@ export function Header() {
           email: user.email || '',
           business_type: businessType
         });
+
+        // Fetch organization name
+        const { data: userData } = await supabase
+          .from('users')
+          .select('organization_id')
+          .eq('id', user.id)
+          .single();
+
+        if (userData?.organization_id) {
+          const { data: org } = await supabase
+            .from('organizations')
+            .select('name')
+            .eq('id', userData.organization_id)
+            .single();
+
+          if (org) {
+            setOrgName(org.name);
+          }
+        }
       }
     }
     loadUser();
@@ -268,11 +290,8 @@ export function Header() {
   if (userProfile?.business_type === 'personal') {
     displayUnitName = userProfile.full_name ? `Personal ${userProfile.full_name}` : 'Personal';
   } else {
-    // If we have units, use the selected one. If undefined (empty array/loading), default to specific fallback.
-    // If units exist but somehow selectedUnit is undefined, maybe pick first.
-    // Logic: If NO units array data, fallback to 'Minha Unidade' or Organization Name if we had it.
-    // For now 'Minha Unidade' is a safe semantic default for single-unit business unless we fetch org name separately.
-    displayUnitName = selectedUnit?.name || 'Minha Unidade';
+    // For non-personal business types, show organization name
+    displayUnitName = orgName || selectedUnit?.name || 'Minha Unidade';
   }
 
   const hasMultipleUnits = units.length > 1;

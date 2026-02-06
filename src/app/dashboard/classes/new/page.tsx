@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useUnit } from '@/context/UnitContext';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -43,9 +44,9 @@ const weekDays = [
 ];
 
 const timeSlots: string[] = Array.from({ length: 17 * 2 }, (_, i) => {
-    const hour = 6 + Math.floor(i / 2);
-    const minute = (i % 2) * 30;
-    return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+  const hour = 6 + Math.floor(i / 2);
+  const minute = (i % 2) * 30;
+  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
 });
 
 const instructors = [
@@ -67,25 +68,22 @@ export default function NewClassPage() {
   const { register, handleSubmit, control, formState: { errors } } = useForm<ClassFormValues>({
     resolver: zodResolver(classSchema),
   });
-  const [currentUnitId, setCurrentUnitId] = useState<string|null>(null);
+  const { currentUnitId } = useUnit();
 
   useEffect(() => {
-    const unitId = localStorage.getItem('currentUnitId');
-    if (unitId) {
-      setCurrentUnitId(unitId);
-    } else {
-      toast({ title: 'Nenhuma unidade selecionada', description: 'Por favor, selecione uma unidade para criar uma aula.', variant: 'destructive'});
+    if (!currentUnitId) {
+      toast({ title: 'Nenhuma unidade selecionada', description: 'Por favor, selecione uma unidade para criar uma aula.', variant: 'destructive' });
       router.back();
     }
-  }, [router, toast]);
+  }, [currentUnitId, router, toast]);
 
   const onSubmit = (data: ClassFormValues) => {
     if (!currentUnitId) {
-      toast({ title: 'Nenhuma unidade selecionada', description: 'Ocorreu um erro ao identificar a unidade ativa.', variant: 'destructive'});
+      toast({ title: 'Nenhuma unidade selecionada', description: 'Ocorreu um erro ao identificar a unidade ativa.', variant: 'destructive' });
       return;
     }
     const selectedColor = classColors.find(c => c.value === data.color);
-    
+
     const newClass: RecurringClass = {
       id: Date.now(),
       status: 'active',
@@ -99,7 +97,7 @@ export default function NewClassPage() {
 
     const existingClasses = JSON.parse(localStorage.getItem('recurring_classes') || '[]');
     localStorage.setItem('recurring_classes', JSON.stringify([...existingClasses, newClass]));
-    
+
     toast({
       title: 'Aula criada com sucesso!',
       description: `A aula "${data.name}" foi adicionada.`,
@@ -172,139 +170,139 @@ export default function NewClassPage() {
           />
         </CardContent>
       </Card>
-      
+
       <Card>
         <CardHeader>
           <CardTitle>Identidade Visual</CardTitle>
           <CardDescription>Escolha um ícone e uma cor para identificar a aula no sistema.</CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-           <Controller
-                control={control}
-                name="icon"
-                render={({ field }) => (
-                <div className="space-y-2">
-                    <Label>Ícone</Label>
-                    <Dialog>
-                    <DialogTrigger asChild>
-                        <Button variant="outline" className="w-full justify-between text-left font-normal h-10">
-                        {field.value ? (
-                            <div className="flex items-center gap-2">
-                                {React.createElement(getIcon(field.value), { className: 'h-5 w-5' })}
-                                <span>{classIcons.find(i => i.value === field.value)?.label}</span>
-                            </div>
-                        ) : (
-                            <span className="text-muted-foreground">Selecione um ícone...</span>
-                        )}
-                        <ChevronDown className="h-4 w-4 opacity-50" />
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-2xl">
-                        <DialogHeader>
-                        <DialogTitle>Selecione um Ícone</DialogTitle>
-                        </DialogHeader>
-                        <div className="py-4 space-y-6 max-h-[60vh] overflow-y-auto pr-2">
-                        {Object.entries(iconCategories).map(([category, icons]) => (
-                            <div key={category}>
-                            <h3 className="font-semibold mb-4 text-lg tracking-tight">{category}</h3>
-                            <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-4">
-                                {icons.map(icon => (
-                                <DialogClose key={icon.value} asChild>
-                                    <button
-                                    onClick={() => field.onChange(icon.value)}
-                                    className={cn(
-                                        "flex flex-col items-center justify-center gap-2 p-3 border rounded-xl aspect-square hover:bg-accent hover:border-primary transition-colors",
-                                        field.value === icon.value && "bg-accent border-primary ring-2 ring-primary"
-                                    )}
-                                    >
-                                    {React.createElement(icon.icon, { className: 'h-7 w-7' })}
-                                    <span className="text-xs text-center truncate w-full">{icon.label}</span>
-                                    </button>
-                                </DialogClose>
-                                ))}
-                            </div>
-                            </div>
-                        ))}
+          <Controller
+            control={control}
+            name="icon"
+            render={({ field }) => (
+              <div className="space-y-2">
+                <Label>Ícone</Label>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between text-left font-normal h-10">
+                      {field.value ? (
+                        <div className="flex items-center gap-2">
+                          {React.createElement(getIcon(field.value), { className: 'h-5 w-5' })}
+                          <span>{classIcons.find(i => i.value === field.value)?.label}</span>
                         </div>
-                    </DialogContent>
-                    </Dialog>
-                    <p className="text-sm text-destructive">{errors.icon?.message}</p>
-                </div>
-                )}
-            />
-            <Controller control={control} name="color" render={({ field }) => (
-                <div className="space-y-2">
-                    <Label>Cor</Label>
-                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <SelectTrigger><SelectValue placeholder="Selecione uma cor..." /></SelectTrigger>
-                        <SelectContent>
-                             {classColors.map(color => (
-                                <SelectItem key={color.value} value={color.value}><div className="flex items-center gap-2"><div className={`w-4 h-4 rounded-full ${color.background}`}></div> {color.label}</div></SelectItem>
+                      ) : (
+                        <span className="text-muted-foreground">Selecione um ícone...</span>
+                      )}
+                      <ChevronDown className="h-4 w-4 opacity-50" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>Selecione um Ícone</DialogTitle>
+                    </DialogHeader>
+                    <div className="py-4 space-y-6 max-h-[60vh] overflow-y-auto pr-2">
+                      {Object.entries(iconCategories).map(([category, icons]) => (
+                        <div key={category}>
+                          <h3 className="font-semibold mb-4 text-lg tracking-tight">{category}</h3>
+                          <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-4">
+                            {icons.map(icon => (
+                              <DialogClose key={icon.value} asChild>
+                                <button
+                                  onClick={() => field.onChange(icon.value)}
+                                  className={cn(
+                                    "flex flex-col items-center justify-center gap-2 p-3 border rounded-xl aspect-square hover:bg-accent hover:border-primary transition-colors",
+                                    field.value === icon.value && "bg-accent border-primary ring-2 ring-primary"
+                                  )}
+                                >
+                                  {React.createElement(icon.icon, { className: 'h-7 w-7' })}
+                                  <span className="text-xs text-center truncate w-full">{icon.label}</span>
+                                </button>
+                              </DialogClose>
                             ))}
-                        </SelectContent>
-                    </Select>
-                    <p className="text-sm text-destructive">{errors.color?.message}</p>
-                </div>
-            )} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+                <p className="text-sm text-destructive">{errors.icon?.message}</p>
+              </div>
+            )}
+          />
+          <Controller control={control} name="color" render={({ field }) => (
+            <div className="space-y-2">
+              <Label>Cor</Label>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <SelectTrigger><SelectValue placeholder="Selecione uma cor..." /></SelectTrigger>
+                <SelectContent>
+                  {classColors.map(color => (
+                    <SelectItem key={color.value} value={color.value}><div className="flex items-center gap-2"><div className={`w-4 h-4 rounded-full ${color.background}`}></div> {color.label}</div></SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-destructive">{errors.color?.message}</p>
+            </div>
+          )} />
         </CardContent>
       </Card>
-      
+
       <Card>
         <CardHeader>
           <CardTitle>Agendamento Recorrente</CardTitle>
           <CardDescription>Defina quando a aula irá acontecer.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                 <Controller control={control} name="startDate" render={({ field }) => (
-                     <div className="space-y-2 flex flex-col"><Label>Data de Início</Label>
-                        <Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value ? format(field.value, "PPP", { locale: ptBR }) : <span>Escolha a data</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent></Popover>
-                        <p className="text-sm text-destructive">{errors.startDate?.message}</p>
-                    </div>
-                )} />
-                 <Controller control={control} name="endDate" render={({ field }) => (
-                     <div className="space-y-2 flex flex-col"><Label>Data de Término (Opcional)</Label>
-                        <Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value ? format(field.value, "PPP", { locale: ptBR }) : <span>Sem data final</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value} onSelect={field.onChange} /></PopoverContent></Popover>
-                    </div>
-                )} />
-            </div>
-            <Controller control={control} name="daysOfWeek" render={({ field }) => (
-                <div className="space-y-2"><Label>Dias da Semana</Label>
-                    <ToggleGroup type="multiple" variant="outline" value={field.value} onValueChange={field.onChange} className="flex flex-wrap gap-2 justify-start">{weekDays.map(day => <ToggleGroupItem key={day.value} value={day.value} className="w-12 h-12 rounded-lg">{day.label}</ToggleGroupItem>)}</ToggleGroup>
-                    <p className="text-sm text-destructive">{errors.daysOfWeek?.message}</p>
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Controller control={control} name="startDate" render={({ field }) => (
+              <div className="space-y-2 flex flex-col"><Label>Data de Início</Label>
+                <Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value ? format(field.value, "PPP", { locale: ptBR }) : <span>Escolha a data</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent></Popover>
+                <p className="text-sm text-destructive">{errors.startDate?.message}</p>
+              </div>
             )} />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Controller control={control} name="time" render={({ field }) => (
-                    <div className="space-y-2"><Label>Horário</Label>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}><SelectTrigger className="w-full md:w-[180px]"><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                            <SelectContent>{timeSlots.map(slot => (<SelectItem key={slot} value={slot}>{slot}</SelectItem>))}</SelectContent>
-                        </Select>
-                        <p className="text-sm text-destructive">{errors.time?.message}</p>
-                    </div>
-                )} />
-                <Controller control={control} name="duration" render={({ field }) => (
-                    <div className="space-y-2"><Label>Duração</Label>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}><SelectTrigger className="w-full md:w-[180px]"><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="30">30 minutos</SelectItem>
-                                <SelectItem value="45">45 minutos</SelectItem>
-                                <SelectItem value="60">60 minutos</SelectItem>
-                                <SelectItem value="90">90 minutos</SelectItem>
-                                <SelectItem value="120">120 minutos</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <p className="text-sm text-destructive">{errors.duration?.message}</p>
-                    </div>
-                )} />
+            <Controller control={control} name="endDate" render={({ field }) => (
+              <div className="space-y-2 flex flex-col"><Label>Data de Término (Opcional)</Label>
+                <Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value ? format(field.value, "PPP", { locale: ptBR }) : <span>Sem data final</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value} onSelect={field.onChange} /></PopoverContent></Popover>
+              </div>
+            )} />
+          </div>
+          <Controller control={control} name="daysOfWeek" render={({ field }) => (
+            <div className="space-y-2"><Label>Dias da Semana</Label>
+              <ToggleGroup type="multiple" variant="outline" value={field.value} onValueChange={field.onChange} className="flex flex-wrap gap-2 justify-start">{weekDays.map(day => <ToggleGroupItem key={day.value} value={day.value} className="w-12 h-12 rounded-lg">{day.label}</ToggleGroupItem>)}</ToggleGroup>
+              <p className="text-sm text-destructive">{errors.daysOfWeek?.message}</p>
             </div>
+          )} />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Controller control={control} name="time" render={({ field }) => (
+              <div className="space-y-2"><Label>Horário</Label>
+                <Select onValueChange={field.onChange} defaultValue={field.value}><SelectTrigger className="w-full md:w-[180px]"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                  <SelectContent>{timeSlots.map(slot => (<SelectItem key={slot} value={slot}>{slot}</SelectItem>))}</SelectContent>
+                </Select>
+                <p className="text-sm text-destructive">{errors.time?.message}</p>
+              </div>
+            )} />
+            <Controller control={control} name="duration" render={({ field }) => (
+              <div className="space-y-2"><Label>Duração</Label>
+                <Select onValueChange={field.onChange} defaultValue={field.value}><SelectTrigger className="w-full md:w-[180px]"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="30">30 minutos</SelectItem>
+                    <SelectItem value="45">45 minutos</SelectItem>
+                    <SelectItem value="60">60 minutos</SelectItem>
+                    <SelectItem value="90">90 minutos</SelectItem>
+                    <SelectItem value="120">120 minutos</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-destructive">{errors.duration?.message}</p>
+              </div>
+            )} />
+          </div>
         </CardContent>
       </Card>
-      
+
       <Card>
         <CardHeader><CardTitle>Regras e Capacidade</CardTitle></CardHeader>
         <CardContent className="space-y-4">
-            <div className="space-y-2"><Label htmlFor="capacity">Capacidade Máxima (Opcional)</Label><Input id="capacity" type="number" placeholder="Deixe em branco para ilimitado" {...register('capacity', { valueAsNumber: true })} /><p className="text-sm text-destructive">{errors.capacity?.message}</p></div>
+          <div className="space-y-2"><Label htmlFor="capacity">Capacidade Máxima (Opcional)</Label><Input id="capacity" type="number" placeholder="Deixe em branco para ilimitado" {...register('capacity', { valueAsNumber: true })} /><p className="text-sm text-destructive">{errors.capacity?.message}</p></div>
         </CardContent>
       </Card>
 
