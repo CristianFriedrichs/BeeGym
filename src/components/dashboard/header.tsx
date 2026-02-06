@@ -204,6 +204,12 @@ export function Header() {
     };
     window.addEventListener('userProfileUpdated', handleProfileUpdate);
 
+    // Listen for organization updates from general settings
+    const handleOrganizationUpdate = () => {
+      loadUser();
+    };
+    window.addEventListener('organizationUpdated', handleOrganizationUpdate);
+
     // ... (rest of existing useEffect logic) ... 
 
     const storedTheme = localStorage.getItem('theme') || 'system';
@@ -247,6 +253,7 @@ export function Header() {
       mediaQuery.removeEventListener('change', handleChange);
       window.removeEventListener('storage-update', syncStateFromStorage);
       window.removeEventListener('userProfileUpdated', handleProfileUpdate);
+      window.removeEventListener('organizationUpdated', handleOrganizationUpdate);
     }
   }, [supabase]);
 

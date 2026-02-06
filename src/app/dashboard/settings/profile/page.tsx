@@ -50,7 +50,7 @@ export default function ProfilePage() {
 
                 if (userData) {
                     setFullName(userData.name || '');
-                    setProfessionalTitle(userData.professional_title || '');
+                    setProfessionalTitle(userData.job_title || '');
                     setBio(userData.bio || '');
                     setAvatarUrl(userData.avatar_url || '');
                     setShowPublicProfile(userData.show_public_profile ?? true);
@@ -73,7 +73,7 @@ export default function ProfilePage() {
                 .from('users')
                 .update({
                     name: fullName,
-                    professional_title: professionalTitle,
+                    job_title: professionalTitle,
                     bio: bio,
                     show_public_profile: showPublicProfile,
                 })

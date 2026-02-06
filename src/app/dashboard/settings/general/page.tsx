@@ -54,8 +54,10 @@ const DEFAULT_HOURS = DAYS_OF_WEEK.reduce((acc, day) => {
 export default function GeneralSettingsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [isUploadingLogo, setIsUploadingLogo] = useState(false);
     const [orgId, setOrgId] = useState<string | null>(null);
     const [businessType, setBusinessType] = useState<string>('personal');
+    const [logoUrl, setLogoUrl] = useState<string>('');
     const { toast } = useToast();
     const supabase = createClient();
 
@@ -115,6 +117,7 @@ export default function GeneralSettingsPage() {
 
                 if (org) {
                     setBusinessType(org.business_type || 'personal');
+                    setLogoUrl(org.logo_url || '');
                     form.reset({
                         name: org.name || '',
                         contact_email: org.contact_email || user.email || '',
@@ -151,6 +154,50 @@ export default function GeneralSettingsPage() {
                     setValue('address_state', data.uf);
                 }
             } catch (error) { }
+        }
+    };
+
+    const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !orgId) return;
+
+        setIsUploadingLogo(true);
+        try {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${orgId}-${Date.now()}.${fileExt}`;
+            const filePath = `${fileName}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from('logos')
+                .upload(filePath, file, { upsert: true });
+
+            if (uploadError) throw uploadError;
+
+            const { data: { publicUrl } } = supabase.storage
+                .from('logos')
+                .getPublicUrl(filePath);
+
+            const { error: updateError } = await supabase
+                .from('organizations')
+                .update({ logo_url: publicUrl })
+                .eq('id', orgId);
+
+            if (updateError) throw updateError;
+
+            setLogoUrl(publicUrl);
+            toast({
+                title: 'Logo Atualizado!',
+                description: 'Sua logomarca foi salva com sucesso.',
+                className: 'bg-[#ff8c00] text-white border-none',
+            });
+        } catch (error: any) {
+            toast({
+                variant: 'destructive',
+                title: 'Erro ao fazer upload',
+                description: error.message || 'Tente novamente mais tarde.',
+            });
+        } finally {
+            setIsUploadingLogo(false);
         }
     };
 
@@ -193,7 +240,8 @@ export default function GeneralSettingsPage() {
                 localStorage.setItem('units_data', JSON.stringify(units));
             }
 
-            window.location.reload();
+            // Dispatch event to update header organization name
+            window.dispatchEvent(new CustomEvent('organizationUpdated'));
         } catch (error: any) {
             toast({
                 variant: "destructive",
@@ -260,6 +308,30 @@ export default function GeneralSettingsPage() {
                                     />
                                 </div>
                             </div>
+
+                            {/* Logo Upload Section */}
+                            <div className="space-y-2 pt-4 border-t">
+                                <Label>Logomarca</Label>
+                                <div className="flex items-center gap-4">
+                                    {logoUrl && (
+                                        <div className="h-20 w-20 rounded-lg border-2 border-border overflow-hidden bg-muted flex items-center justify-center">
+                                            <img src={logoUrl} alt="Logo" className="h-full w-full object-contain" />
+                                        </div>
+                                    )}
+                                    <div className="flex-1">
+                                        <Input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleLogoUpload}
+                                            disabled={isUploadingLogo}
+                                            className="cursor-pointer"
+                                        />
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            {isUploadingLogo ? 'Fazendo upload...' : 'PNG, JPG ou SVG (máx. 2MB)'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
                         </CardContent>
                     </Card>
                 </TabsContent>
@@ -272,12 +344,12 @@ export default function GeneralSettingsPage() {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="flex items-center space-x-2 pb-4">
-                                <Checkbox
+                                <Switch
                                     id="has_physical_location"
                                     checked={!hasLocation}
                                     onCheckedChange={(checked) => setValue('has_physical_location', !checked)}
                                 />
-                                <Label htmlFor="has_physical_location">Não possuo local fixo</Label>
+                                <Label htmlFor="has_physical_location">Atendimento em domicílio / Sem local fixo</Label>
                             </div>
                             <div className={!hasLocation ? 'opacity-50 pointer-events-none space-y-4' : 'space-y-4'}>
                                 <div className="grid grid-cols-2 gap-4">
