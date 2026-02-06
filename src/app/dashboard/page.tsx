@@ -176,6 +176,20 @@ export default function Dashboard() {
         </DialogContent>
       </Dialog>
 
+      {/* Page Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+          <p className="text-muted-foreground mt-1">Visão geral das suas atividades</p>
+        </div>
+        <Link href="/dashboard/clients/new">
+          <Button className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 py-2.5 rounded-lg shadow-sm flex items-center gap-2">
+            <User className="h-4 w-4" />
+            + Novo Aluno
+          </Button>
+        </Link>
+      </div>
+
       <TooltipProvider>
         {/* Live Class Card - Now self-contained with Supabase integration */}
         {isClient && <LiveClassCard />}
@@ -218,7 +232,7 @@ export default function Dashboard() {
           <Dialog onOpenChange={(isOpen) => !isOpen && setSelectedClass(null)}>
             <div className="bg-card rounded-3xl p-6 shadow-soft border">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-bold text-foreground font-display">Próximas Aulas</h3>
+                <h3 className="text-lg font-bold text-foreground font-display">Próximas Atividades</h3>
                 <Link className="text-sm font-medium text-primary hover:text-primary/90" href="/dashboard/calendar">Ver Tudo</Link>
               </div>
               <div className="overflow-x-auto">
