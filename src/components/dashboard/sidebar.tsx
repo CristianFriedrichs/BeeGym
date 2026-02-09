@@ -25,6 +25,7 @@ const menuItems = [
   { icon: CreditCard, label: 'Pagamentos', href: '/dashboard/payments' },
   { icon: Dumbbell, label: 'Exercícios', href: '/dashboard/workouts/library' },
   { icon: BarChart3, label: 'Relatórios', href: '/dashboard/reports' },
+  { icon: Users, label: 'Equipe', href: '/dashboard/settings/team' },
   { icon: Settings, label: 'Configurações', href: '/dashboard/settings' },
 ];
 

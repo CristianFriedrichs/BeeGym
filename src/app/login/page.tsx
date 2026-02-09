@@ -54,6 +54,18 @@ export default function LoginPage() {
           <div className="absolute inset-0 bg-gradient-to-t from-[#00173F]/90 via-[#00173F]/40 to-[#00173F]/20"></div>
         </div>
         <div className="relative z-10 p-16 pb-24">
+
+          {/* LOGO NOVO AQUI (Esquerda) */}
+          <div className="mb-8">
+            <Image
+              src="/logo-white.png"
+              alt="BeeGym Logo"
+              width={180}
+              height={60}
+              className="object-contain"
+            />
+          </div>
+
           <div className="max-w-lg">
             <h1 className="text-white text-5xl font-bold leading-tight tracking-tight mb-4">
               Sua gestão no ritmo do seu treino
@@ -70,14 +82,7 @@ export default function LoginPage() {
 
         <div className="w-full max-w-[440px] px-6 z-10">
 
-          {/* Logo */}
-          <div className="flex items-center gap-2 mb-10">
-            <div className="flex items-center gap-1 text-3xl font-bold tracking-tighter">
-              <span className="text-[#ff8c00]">Bee</span><span className="text-[#00173F] dark:text-white">Gym</span>
-            </div>
-            {/* Ícone simples representando o logo */}
-            <div className="h-3 w-3 bg-[#ff8c00] rounded-full ml-1"></div>
-          </div>
+          {/* Logo removido daqui conforme solicitado */}
 
           <div className="mb-8">
             <h2 className="text-[#00173F] dark:text-white text-[28px] font-bold leading-tight">Acesse sua conta</h2>

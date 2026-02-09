@@ -228,31 +228,56 @@ export default function CalendarPage() {
 
                 if (!userData?.organization_id) return [];
 
-                // Fetch events with participant count
-                const { data: events, error } = await supabase
+                // Busca corrigida usando start_time e end_time
+                const { data, error } = await supabase
                     .from('calendar_events')
                     .select(`
-                        *,
-                        event_participants (count)
+                        id,
+                        title,
+                        start_time,
+                        end_time,
+                        event_type,
+                        status,
+                        color,
+                        rooms ( name ),
+                        students ( full_name )
                     `)
                     .eq('organization_id', userData.organization_id)
-                    .gte('date', format(startOfWeek(startOfMonth(currentDate), { locale: ptBR }), 'yyyy-MM-dd'))
-                    .lte('date', format(endOfWeek(endOfMonth(currentDate), { locale: ptBR }), 'yyyy-MM-dd'));
+                    .gte('start_time', format(startOfWeek(startOfMonth(currentDate), { locale: ptBR }), 'yyyy-MM-dd'))
+                    .lte('start_time', format(endOfWeek(endOfMonth(currentDate), { locale: ptBR }), 'yyyy-MM-dd'));
 
                 if (error) {
                     console.error('Error fetching events from Supabase:', error);
                     return [];
                 }
 
-                return (events || []).map((event: any) => ({
-                    ...event,
-                    date: new Date(event.date),
-                    eventType: event.event_type === 'TREINO_ABERTO' ? 'treino' : event.event_type,
-                    participant_count: event.event_participants?.[0]?.count || 0,
-                    participants: [],
-                }));
-            } catch (error) {
-                console.error('Error in fetchSupabaseEvents:', error);
+                // Mapeamento dos dados para o formato do Calendário
+                return (data || []).map((event: any) => {
+                    const startDate = new Date(event.start_time);
+                    const endDate = new Date(event.end_time);
+                    const durationMinutes = Math.round((endDate.getTime() - startDate.getTime()) / 60000);
+
+                    return {
+                        id: event.id,
+                        title: event.title,
+                        date: startDate, // Objeto Date usado pelo calendário
+                        time: format(startDate, 'HH:mm'),
+                        end_time: format(endDate, 'HH:mm'), // Necessário para cálculo de status
+                        duration: durationMinutes > 0 ? durationMinutes : 60,
+                        eventType: event.event_type === 'AULA' ? 'aula' : 'treino',
+                        type: event.event_type === 'AULA' ? 'Aula Coletiva' : 'Treino',
+                        client: event.students?.full_name || 'Vários alunos', // Usado para exibição do nome
+                        name: event.title || event.students?.full_name, // Usado para exibição do nome
+                        instructor: 'Instrutor', // Placeholder
+                        room: event.rooms?.name || 'Sala Principal',
+                        status: event.status === 'SCHEDULED' ? 'Agendado' : event.status,
+                        color: event.color || '#FF8C00',
+                        participants: [], // Placeholder
+                        location: event.rooms?.name || 'Sala Principal'
+                    };
+                });
+            } catch (err) {
+                console.error('Unexpected error in calendar:', err);
                 return [];
             }
         };

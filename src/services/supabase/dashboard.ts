@@ -111,69 +111,65 @@ export async function getKPIs(unitId?: string): Promise<KPI[]> {
 
 import { QueryData } from '@supabase/supabase-js';
 
-export async function getUpcomingClasses(unitId?: string): Promise<ScheduleItem[]> {
+export async function getUpcomingClasses(organizationId: string): Promise<ScheduleItem[]> {
     const supabase = createClient();
-    const now = new Date().toISOString();
 
-    let query = supabase
-        .from('calendar_events')
-        .select(`
-            id,
-            start_datetime,
-            status,
-            class_templates (
+    // TRAVA DE SEGURANÇA: Só busca se tiver o ID da organização
+    if (!organizationId) return [];
+
+    try {
+        // Busca na tabela nova 'calendar_events', sem pedir 'instructors'
+        const { data, error } = await supabase
+            .from('calendar_events')
+            .select(`
+                id,
                 title,
+                start_time,
+                end_time,
+                status,
+                color,
                 icon,
-                color
-            ),
-            instructors (
-                name
-            ),
-            rooms (
-                capacity
-            )
-        `)
-        .gte('start_datetime', now)
-        .order('start_datetime', { ascending: true })
-        .limit(10);
+                event_type,
+                rooms (
+                    name
+                ),
+                students (
+                    full_name,
+                    avatar_url
+                )
+            `)
+            .eq('organization_id', organizationId)
+            .eq('status', 'SCHEDULED' as any) // Fix enum mismatch
+            .gte('start_time', new Date().toISOString()) // Busca eventos futuros
+            .order('start_time', { ascending: true })
+            .limit(5);
 
-    // Only apply filter if unitId is a valid UUID string (simple validation)
-    if (unitId && unitId.length > 10) {
-        query = query.eq('unit_id', unitId);
-    }
+        if (error) {
+            console.error("Error fetching classes:", error);
+            // Retorna array vazio em caso de erro para não quebrar a tela
+            return [];
+        }
 
-    type ClassesResponse = QueryData<typeof query>;
+        // Mapeia para o formato que o componente visual espera (ScheduleItem)
+        return (data as any[]).map(event => {
+            const startTime = new Date(event.start_time);
+            return {
+                time: format(startTime, 'HH:mm'), // Formata para hora:min
+                name: event.title || 'Sem título',
+                type: event.event_type || 'AULA',
+                trainer: event.students?.full_name || 'Instrutor', // Placeholder seguro
+                capacity: '0/0', // Capacidade mockada por enquanto
+                status: event.status === 'SCHEDULED' ? 'Agendado' : event.status,
+                statusColor: 'bg-blue-100 text-blue-700', // Padrão
+                classType: 'group', // Default safe value
+                date: startTime // Objeto Date real para ordenação/comparação
+            };
+        });
 
-    const { data, error } = await query;
-
-    if (error) {
-        console.error("Error fetching classes:", error);
-        // Don't throw to avoid crashing whole dashboard, return empty with error log
+    } catch (error) {
+        console.error("Unexpected error in getUpcomingClasses:", error);
         return [];
     }
-
-    if (!data) return [];
-
-    const events: ClassesResponse = data;
-
-    return events.map((event) => {
-        const date = new Date(event.start_datetime);
-        const template = event.class_templates;
-        const instructor = event.instructors;
-        const room = event.rooms;
-
-        return {
-            time: format(date, 'HH:mm'),
-            name: template ? template.title : 'Aula sem título',
-            type: template ? template.title : 'Geral',
-            trainer: instructor ? instructor.name : 'Instrutor',
-            capacity: room ? `0/${room.capacity}` : 'Livre',
-            status: event.status === 'PREVISTA' ? 'Em Breve' : event.status,
-            statusColor: 'bg-secondary text-secondary-foreground', // detailed mapping could be added
-            classType: 'group',
-            date: date
-        };
-    });
 }
 
 export async function getAlerts(unitId?: string): Promise<Alert[]> {

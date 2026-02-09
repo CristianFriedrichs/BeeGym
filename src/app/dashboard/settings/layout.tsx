@@ -26,8 +26,7 @@ const menuSections = [
         title: 'CONFIGURAÇÕES DO NEGÓCIO',
         items: [
             { label: 'Geral', href: '/dashboard/settings/general', icon: Settings },
-            { label: 'Usuários e Perfis', href: '/dashboard/settings/users', icon: Users },
-            { label: 'Instrutores', href: '/dashboard/settings/instructors', icon: GraduationCap },
+            { label: 'Equipe', href: '/dashboard/settings/team', icon: Users },
             { label: 'Unidades', href: '/dashboard/settings/units', icon: Building2 },
             { label: 'Planos', href: '/dashboard/settings/plans', icon: CreditCard },
             { label: 'Aulas', href: '/dashboard/settings/classes', icon: CalendarDays },

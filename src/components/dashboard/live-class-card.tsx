@@ -43,7 +43,7 @@ interface LiveEvent {
             avatar_url: string | null;
         };
         status: string;
-        confirmed_by_user: boolean;
+        confirmed_by_user: string | null;
     }>;
 }
 
@@ -80,6 +80,7 @@ export function LiveClassCard() {
     const [checkingInIds, setCheckingInIds] = useState<Set<string>>(new Set());
     const [workoutModalOpen, setWorkoutModalOpen] = useState(false);
     const [classModalOpen, setClassModalOpen] = useState(false);
+    const [organizationId, setOrganizationId] = useState<string | null>(null);
     const supabase = createClient();
     const router = useRouter();
     const { toast } = useToast();
@@ -87,38 +88,48 @@ export function LiveClassCard() {
     const currentEvent = liveEvents[currentEventIndex];
     const elapsedTime = useElapsedTime(currentEvent?.start_time || new Date().toISOString());
 
-    const fetchLiveEvents = useCallback(async () => {
-        try {
+    // Fetch Organization ID once
+    useEffect(() => {
+        async function fetchOrgId() {
             const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
+            if (user) {
+                const { data: userData } = await supabase
+                    .from('users')
+                    .select('organization_id')
+                    .eq('id', user.id)
+                    .single();
+                if (userData?.organization_id) {
+                    setOrganizationId(userData.organization_id);
+                }
+            }
+        }
+        fetchOrgId();
+    }, [supabase]);
 
-            const { data: userData } = await supabase
-                .from('users')
-                .select('organization_id')
-                .eq('id', user.id)
-                .single();
+    const fetchLiveEvents = useCallback(async () => {
+        // TRAVA DE SEGURANÇA: Só busca se tiver o ID da organização
+        if (!organizationId) return;
 
-            if (!userData?.organization_id) return;
+        try {
+            const now = new Date().toISOString();
 
-            const now = new Date();
-            const currentTime = now.toTimeString().slice(0, 8); // HH:MM:SS
-            const currentDate = now.toISOString().split('T')[0]; // YYYY-MM-DD
-
-            // Simplified query - fetch events with instructor join
-            const { data: events, error } = await supabase
+            // Busca eventos que estão acontecendo AGORA na tabela nova
+            const { data, error } = await supabase
                 .from('calendar_events')
                 .select(`
-            *,
-            instructor:users!calendar_events_instructor_id_fkey(id, full_name, avatar_url),
-            unit:units(id, name),
-            room:rooms(id, name)
-          `)
-                .eq('organization_id', userData.organization_id)
-                .eq('date', currentDate)
-                .lte('start_time', currentTime)
-                .gte('end_time', currentTime)
-                .in('status', ['SCHEDULED', 'IN_PROGRESS'])
-                .order('start_time');
+                    id,
+                    title,
+                    start_time,
+                    end_time,
+                    status,
+                    color,
+                    rooms ( name ),
+                    students ( full_name, avatar_url )
+                `)
+                .eq('organization_id', organizationId)
+                .lte('start_time', now) // Começou antes de agora
+                .gte('end_time', now)   // Termina depois de agora
+                .limit(5); // Aumentamos para pegar mais de um se houver
 
             if (error) {
                 console.error('Error fetching live events:', error);
@@ -126,42 +137,37 @@ export function LiveClassCard() {
                 return;
             }
 
-            // Fetch attendees separately for each event
-            const eventsWithAttendees = await Promise.all(
-                (events || []).map(async (event) => {
-                    const { data: attendees } = await supabase
-                        .from('attendance_logs')
-                        .select(`
-                id,
-                status,
-                confirmed_by_user,
-                student:students(id, full_name, avatar_url)
-              `)
-                        .eq('event_id', event.id);
+            if (data) {
+                const formattedEvents = (data as any[]).map(event => ({
+                    id: event.id,
+                    name: event.title, // Mapeia title para name
+                    event_type: 'TREINO',
+                    start_time: event.start_time,
+                    end_time: event.end_time,
+                    instructor: {
+                        full_name: event.students?.full_name || 'Aluno',
+                        avatar_url: event.students?.avatar_url || null
+                    },
+                    room: event.rooms ? { name: event.rooms.name } : null,
+                    attendees: []
+                }));
+                setLiveEvents(formattedEvents as any);
+            }
 
-                    return {
-                        ...event,
-                        attendees: attendees || []
-                    };
-                })
-            );
-
-            setLiveEvents(eventsWithAttendees);
-        } catch (error) {
-            console.error('Error in fetchLiveEvents:', error);
-            setLiveEvents([]);
+        } catch (err) {
+            console.error('Unexpected error:', err);
         } finally {
-            setIsLoading(false);
+            setIsLoading(false); // LIBERA A TELA
         }
-    }, [supabase]);
+    }, [supabase, organizationId]);
 
     useEffect(() => {
-        fetchLiveEvents();
-
-        // Refresh every 30 seconds
-        const interval = setInterval(fetchLiveEvents, 30000);
-        return () => clearInterval(interval);
-    }, [fetchLiveEvents]);
+        if (organizationId) {
+            fetchLiveEvents();
+            const interval = setInterval(fetchLiveEvents, 30000);
+            return () => clearInterval(interval);
+        }
+    }, [fetchLiveEvents, organizationId]);
 
     // Quick check-in handler
     const handleQuickCheckIn = async (attendanceLogId: string, studentName: string) => {
@@ -172,7 +178,7 @@ export function LiveClassCard() {
                 .from('attendance_logs')
                 .update({
                     status: 'PRESENT',
-                    confirmed_by_user: true
+                    confirmed_by_user: 'TRUE'
                 })
                 .eq('id', attendanceLogId);
 
@@ -183,7 +189,7 @@ export function LiveClassCard() {
                 ...event,
                 attendees: event.attendees.map(att =>
                     att.id === attendanceLogId
-                        ? { ...att, status: 'PRESENT', confirmed_by_user: true }
+                        ? { ...att, status: 'PRESENT', confirmed_by_user: 'TRUE' }
                         : att
                 )
             })));

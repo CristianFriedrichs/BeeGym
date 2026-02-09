@@ -49,7 +49,7 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(url)
     }
 
-    // 2. Has Session: Check Onboarding Status (DB Check)
+    // 2. Has Session: Check User Status (Active vs Pending)
     if (session && !isAuthRoute && !isPublicStatic) {
 
         // Prevent logged in users from accessing login/register
@@ -58,23 +58,22 @@ export async function middleware(request: NextRequest) {
             return NextResponse.redirect(url)
         }
 
-        // Only perform DB check if we are navigating critical flows to avoid performance hit on static assets (already filtered)
-        // Check organization status
+        // Only perform DB check if we are navigating critical flows
+
+        // Fetch User Profile to check 'active' status
         const { data: userData } = await supabase
             .from('users')
-            .select(`
-                organization:organizations (
-                    onboarding_completed
-                )
-            `)
+            .select('active')
             .eq('id', session.user.id)
             .single()
 
-        // Safely access nested property
-        const onboardingCompleted = (userData?.organization as any)?.onboarding_completed
+        // If !active (false/null), user is PENDING -> Force Onboarding
+        // If active (true), user is ACTIVE -> Allow Dashboard
 
-        // Logic A: Incomplete Onboarding
-        if (!onboardingCompleted) {
+        const isActive = userData?.active === true
+
+        // Logic A: Incomplete Onboarding (!active)
+        if (!isActive) {
             // If NOT on onboarding page, force redirect
             if (!isOnboardingPage) {
                 url.pathname = '/onboarding'
@@ -83,8 +82,8 @@ export async function middleware(request: NextRequest) {
             // If ON onboarding page, ALLOW (no action needed)
         }
 
-        // Logic B: Complete Onboarding
-        if (onboardingCompleted) {
+        // Logic B: Complete Onboarding (active)
+        if (isActive) {
             // If trying to access onboarding again, redirect to Dashboard
             if (isOnboardingPage) {
                 url.pathname = '/'
