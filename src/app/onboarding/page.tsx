@@ -53,8 +53,14 @@ export default function OnboardingPage() {
                 .select('*')
                 .order('price', { ascending: true })
 
-            if (data) setPlans(data)
-            if (error) console.error('Error fetching plans:', error)
+            if (data) {
+                // Cast features from JSON to string[] (or map if needed)
+                const formattedData = data.map((plan: any) => ({
+                    ...plan,
+                    features: Array.isArray(plan.features) ? plan.features : []
+                })) as Plan[]
+                setPlans(formattedData)
+            }
         }
         fetchPlans()
     }, [])
@@ -167,6 +173,7 @@ export default function OnboardingPage() {
             })
 
             toast({ title: 'Configuração concluída!', description: 'Bem-vindo ao BeeGym.' })
+            router.push('/dashboard')
         } catch (error) {
             toast({ variant: 'destructive', title: 'Erro', description: 'Falha ao concluir configuração.' })
         } finally {
