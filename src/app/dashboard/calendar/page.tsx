@@ -53,16 +53,27 @@ import {
     DialogClose,
 } from "@/components/ui/dialog";
 import { Badge } from '@/components/ui/badge';
-import { NewClassModal } from '@/components/dashboard/calendar/new-class-modal';
+import { NewTrainingModal } from '@/components/dashboard/modals/new-training-modal';
+import { CreateRecurringClassModal } from '@/components/dashboard/modals/create-recurring-class-modal';
+import { ManageParticipantsModal } from '@/components/dashboard/modals/manage-participants-modal';
+import { SessionManagerModal } from '@/components/dashboard/modals/session-manager-modal';
 import { RecurringClass, classColorStyles, getIcon as getClassIcon } from '@/lib/class-definitions';
 import { initialClients } from '@/lib/mock-data';
 import { logAction } from '@/lib/logger';
+import { createClient } from '@/lib/supabase/client';
 
 
 const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const hours = Array.from({ length: 15 }, (_, i) => `${String(i + 7).padStart(2, '0')}:00`);
 
+// Session status configuration
 const statusConfig: { [key: string]: { color: string; label: string; } } = {
+    'SCHEDULED': { color: 'bg-blue-500', label: 'Agendado' },
+    'PENDING': { color: 'bg-yellow-500', label: 'Pendente' },
+    'COMPLETED': { color: 'bg-green-500/50', label: 'Concluído' },
+    'MISSED': { color: 'bg-red-500', label: 'Falta' },
+    'CANCELED': { color: 'bg-gray-400', label: 'Cancelado' },
+    // Legacy statuses for backward compatibility
     'Prevista': { color: 'bg-blue-500', label: 'Prevista' },
     'Em Execução': { color: 'bg-purple-500', label: 'Em Execução' },
     'Pendente': { color: 'bg-orange-500', label: 'Pendente' },
@@ -70,6 +81,33 @@ const statusConfig: { [key: string]: { color: string; label: string; } } = {
     'Falta': { color: 'bg-red-500', label: 'Falta' },
     'Finalizada': { color: 'bg-gray-500', label: 'Finalizada' },
 };
+
+// Calculate dynamic status based on event time
+function calculateEventStatus(event: any, now: Date): string {
+    // If manually set to final states, keep them
+    if (['COMPLETED', 'MISSED', 'CANCELED'].includes(event.status)) {
+        return event.status;
+    }
+
+    // Parse event end time
+    const eventDate = new Date(event.date);
+    const endTime = event.end_time || event.time; // Fallback to start time if no end_time
+    const [hours, minutes] = endTime.split(':').map(Number);
+    const eventEnd = new Date(eventDate);
+    eventEnd.setHours(hours, minutes, 0, 0);
+
+    // If event hasn't ended yet, it's SCHEDULED
+    if (eventEnd > now) {
+        return event.status === 'SCHEDULED' ? 'SCHEDULED' : event.status;
+    }
+
+    // If event ended but not finalized, it's PENDING
+    if (event.status === 'SCHEDULED') {
+        return 'PENDING';
+    }
+
+    return event.status;
+}
 
 
 const capitalize = (s: string) => {
@@ -86,6 +124,7 @@ export default function CalendarPage() {
     const [isNewClassModalOpen, setIsNewClassModalOpen] = useState(false);
     const [scheduledEvents, setScheduledEvents] = useState<any[]>([]);
     const [isCreateModalOpen, setCreateModalOpen] = useState(false);
+    const [isRecurringClassModalOpen, setIsRecurringClassModalOpen] = useState(false);
     const [selectedDateForCreation, setSelectedDateForCreation] = useState<Date | null>(null);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [currentUnitId, setCurrentUnitId] = useState<string | null>(null);
@@ -95,6 +134,10 @@ export default function CalendarPage() {
 
     const [lastUpdate, setLastUpdate] = useState(Date.now());
     const [activeEvent, setActiveEvent] = useState<any | null>(null);
+    const [isManageParticipantsModalOpen, setIsManageParticipantsModalOpen] = useState(false);
+    const [selectedEventForParticipants, setSelectedEventForParticipants] = useState<any | null>(null);
+    const [isSessionManagerModalOpen, setIsSessionManagerModalOpen] = useState(false);
+    const [selectedEventForSession, setSelectedEventForSession] = useState<any | null>(null);
     const { toast } = useToast();
 
     useEffect(() => {
@@ -170,63 +213,111 @@ export default function CalendarPage() {
             console.error("Failed to load classes from localStorage", error);
         }
 
-        // Process recurring group classes ('aulas')
-        try {
-            const recurringClassesJSON = localStorage.getItem('recurring_classes');
-            if (recurringClassesJSON) {
-                const recurringClasses: RecurringClass[] = JSON.parse(recurringClassesJSON).filter((c: RecurringClass) => c.unitId === currentUnitId);
-                const viewInterval = { start: startOfWeek(startOfMonth(currentDate), { locale: ptBR }), end: endOfWeek(endOfMonth(currentDate), { locale: ptBR }) };
+        // Fetch events from Supabase (including TREINO_ABERTO with participant counts)
+        const fetchSupabaseEvents = async () => {
+            try {
+                const supabase = createClient();
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) return [];
 
-                recurringClasses.forEach(cls => {
-                    if (cls.status !== 'active') return;
+                const { data: userData } = await supabase
+                    .from('users')
+                    .select('organization_id')
+                    .eq('id', user.id)
+                    .single();
 
-                    const classInterval = {
-                        start: parseISO(cls.startDate),
-                        end: cls.endDate ? parseISO(cls.endDate) : viewInterval.end
-                    };
+                if (!userData?.organization_id) return [];
 
-                    const daysInView = eachDayOfInterval(viewInterval);
+                // Fetch events with participant count
+                const { data: events, error } = await supabase
+                    .from('calendar_events')
+                    .select(`
+                        *,
+                        event_participants (count)
+                    `)
+                    .eq('organization_id', userData.organization_id)
+                    .gte('date', format(startOfWeek(startOfMonth(currentDate), { locale: ptBR }), 'yyyy-MM-dd'))
+                    .lte('date', format(endOfWeek(endOfMonth(currentDate), { locale: ptBR }), 'yyyy-MM-dd'));
 
-                    daysInView.forEach(day => {
-                        const dayOfWeek = getDay(day).toString();
-                        const instanceId = `${cls.id}-${format(day, 'yyyy-MM-dd')}`;
+                if (error) {
+                    console.error('Error fetching events from Supabase:', error);
+                    return [];
+                }
 
-                        if (recurringExceptions[instanceId]) {
-                            return; // Skip this overridden instance
-                        }
-
-                        if (cls.daysOfWeek.includes(dayOfWeek) && isWithinInterval(day, classInterval)) {
-                            const colorData = classColorStyles[cls.color as keyof typeof classColorStyles] || classColorStyles.primary;
-                            const Icon = getClassIcon(cls.icon)
-                            allEvents.push({
-                                id: instanceId,
-                                date: day,
-                                time: cls.time,
-                                duration: cls.duration,
-                                client: cls.name, // For display
-                                name: cls.name,
-                                type: 'Aula Coletiva', // More descriptive
-                                instructor: cls.instructor,
-                                location: cls.location,
-                                color: colorData.background.replace('bg-', 'border-'), // Use border color for indicator
-                                icon: <Icon className={`h-6 w-6 ${colorData.text}`} />,
-                                eventType: 'aula',
-                                participants: initialClients.slice(0, Math.min(initialClients.length, cls.capacity || 5)).map(p => ({ ...p, id: p.id + Math.random() })), // Mock participants
-                            });
-                        }
-                    });
-                });
+                return (events || []).map((event: any) => ({
+                    ...event,
+                    date: new Date(event.date),
+                    eventType: event.event_type === 'TREINO_ABERTO' ? 'treino' : event.event_type,
+                    participant_count: event.event_participants?.[0]?.count || 0,
+                    participants: [],
+                }));
+            } catch (error) {
+                console.error('Error in fetchSupabaseEvents:', error);
+                return [];
             }
-        } catch (e) {
-            console.error("Failed to load recurring classes", e);
-        }
+        };
 
-        const eventsWithStatus = allEvents.map(event => ({
-            ...event,
-            status: getEventStatus(event, now),
-        }))
+        fetchSupabaseEvents().then(supabaseEvents => {
+            allEvents = [...allEvents, ...supabaseEvents];
 
-        setScheduledEvents(eventsWithStatus);
+            // Process recurring group classes ('aulas')
+            try {
+                const recurringClassesJSON = localStorage.getItem('recurring_classes');
+                if (recurringClassesJSON) {
+                    const recurringClasses: RecurringClass[] = JSON.parse(recurringClassesJSON).filter((c: RecurringClass) => c.unitId === currentUnitId);
+                    const viewInterval = { start: startOfWeek(startOfMonth(currentDate), { locale: ptBR }), end: endOfWeek(endOfMonth(currentDate), { locale: ptBR }) };
+
+                    recurringClasses.forEach(cls => {
+                        if (cls.status !== 'active') return;
+
+                        const classInterval = {
+                            start: parseISO(cls.startDate),
+                            end: cls.endDate ? parseISO(cls.endDate) : viewInterval.end
+                        };
+
+                        const daysInView = eachDayOfInterval(viewInterval);
+
+                        daysInView.forEach(day => {
+                            const dayOfWeek = getDay(day).toString();
+                            const instanceId = `${cls.id}-${format(day, 'yyyy-MM-dd')}`;
+
+                            if (recurringExceptions[instanceId]) {
+                                return; // Skip this overridden instance
+                            }
+
+                            if (cls.daysOfWeek.includes(dayOfWeek) && isWithinInterval(day, classInterval)) {
+                                const colorData = classColorStyles[cls.color as keyof typeof classColorStyles] || classColorStyles.primary;
+                                const Icon = getClassIcon(cls.icon)
+                                allEvents.push({
+                                    id: instanceId,
+                                    date: day,
+                                    time: cls.time,
+                                    duration: cls.duration,
+                                    client: cls.name, // For display
+                                    name: cls.name,
+                                    type: 'Aula Coletiva', // More descriptive
+                                    instructor: cls.instructor,
+                                    location: cls.location,
+                                    color: colorData.background.replace('bg-', 'border-'), // Use border color for indicator
+                                    icon: <Icon className={`h-6 w-6 ${colorData.text}`} />,
+                                    eventType: 'aula',
+                                    participants: initialClients.slice(0, Math.min(initialClients.length, cls.capacity || 5)).map(p => ({ ...p, id: p.id + Math.random() })), // Mock participants
+                                });
+                            }
+                        });
+                    });
+                }
+            } catch (e) {
+                console.error("Failed to load recurring classes", e);
+            }
+
+            const eventsWithStatus = allEvents.map(event => ({
+                ...event,
+                status: calculateEventStatus(event, now),
+            }))
+
+            setScheduledEvents(eventsWithStatus);
+        });
     }, [currentDate, isNewClassModalOpen, now, lastUpdate, currentUnitId]);
 
     const firstDayOfMonth = useMemo(() => startOfMonth(currentDate), [currentDate]);
@@ -396,6 +487,21 @@ export default function CalendarPage() {
         const statusInfo = statusConfig[event.status] || { color: 'bg-gray-400', label: 'N/A' };
 
         const handleCardClick = () => {
+            // Handle TREINO_ABERTO events (open participants modal)
+            if (event.event_type === 'TREINO_ABERTO') {
+                setSelectedEventForParticipants(event);
+                setIsManageParticipantsModalOpen(true);
+                return;
+            }
+
+            // Handle training events (open session manager)
+            if (event.eventType === 'treino' || event.event_type === 'TREINO_INDIVIDUAL' || event.event_type === 'TREINO_GRUPO') {
+                setSelectedEventForSession(event);
+                setIsSessionManagerModalOpen(true);
+                return;
+            }
+
+            // Legacy behavior for other events
             if (event.status === 'Pendente' && event.eventType === 'treino') {
                 alert(`Abrir popup de finalização para: ${event.client}`);
             } else if (event.status === 'Prevista' || event.status === 'Em Execução') {
@@ -424,6 +530,18 @@ export default function CalendarPage() {
                                 </div>
                                 {(event.eventType === 'aula' || event.eventType === 'aula_instance') && event.instructor && (
                                     <p className="text-sm text-muted-foreground mt-1">com {event.instructor}</p>
+                                )}
+                                {event.event_type === 'TREINO_ABERTO' && (
+                                    <Badge
+                                        className={cn(
+                                            'mt-2 font-semibold text-xs',
+                                            (event.participant_count || 0) >= (event.capacity_limit || 0)
+                                                ? 'bg-destructive text-destructive-foreground'
+                                                : 'bg-primary text-primary-foreground'
+                                        )}
+                                    >
+                                        {event.participant_count || 0}/{event.capacity_limit || 0} Vagas
+                                    </Badge>
                                 )}
                             </div>
                             <div className="flex -space-x-2">
@@ -508,20 +626,18 @@ export default function CalendarPage() {
                             </p>
                         </div>
                         <div className="flex items-center gap-2">
-                            <Dialog open={isNewClassModalOpen} onOpenChange={setIsNewClassModalOpen}>
-                                <DialogTrigger asChild>
-                                    <Button>
-                                        <Plus className="mr-2 h-4 w-4" />
-                                        Novo Treino
-                                    </Button>
-                                </DialogTrigger>
-                                <NewClassModal setIsOpen={setIsNewClassModalOpen} />
-                            </Dialog>
-                            <Button asChild>
-                                <Link href="/dashboard/classes/new">
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Nova Aula
-                                </Link>
+                            <NewTrainingModal
+                                open={isNewClassModalOpen}
+                                onOpenChange={setIsNewClassModalOpen}
+                                onSuccess={() => setLastUpdate(Date.now())}
+                            />
+                            <Button onClick={() => setIsNewClassModalOpen(true)}>
+                                <Plus className="mr-2 h-4 w-4" />
+                                Treino
+                            </Button>
+                            <Button onClick={() => setIsRecurringClassModalOpen(true)} className="bg-primary hover:bg-primary/90">
+                                <Plus className="mr-2 h-4 w-4" />
+                                Aula
                             </Button>
                         </div>
                     </div>
@@ -702,6 +818,45 @@ export default function CalendarPage() {
                             </div>
                         ) : null}
                     </DragOverlay>
+
+                    {/* Recurring Class Modal */}
+                    <CreateRecurringClassModal
+                        open={isRecurringClassModalOpen}
+                        onOpenChange={setIsRecurringClassModalOpen}
+                        onSuccess={() => {
+                            setLastUpdate(Date.now());
+                        }}
+                    />
+
+                    {/* Manage Participants Modal */}
+                    <ManageParticipantsModal
+                        open={isManageParticipantsModalOpen}
+                        onOpenChange={setIsManageParticipantsModalOpen}
+                        eventId={selectedEventForParticipants?.id}
+                        eventName={selectedEventForParticipants?.name}
+                        eventDate={selectedEventForParticipants?.date}
+                        eventTime={selectedEventForParticipants?.time}
+                        capacityLimit={selectedEventForParticipants?.capacity_limit}
+                        onSuccess={() => {
+                            setLastUpdate(Date.now());
+                        }}
+                    />
+
+                    {/* Session Manager Modal */}
+                    <SessionManagerModal
+                        open={isSessionManagerModalOpen}
+                        onOpenChange={setIsSessionManagerModalOpen}
+                        eventId={selectedEventForSession?.id}
+                        eventName={selectedEventForSession?.name || selectedEventForSession?.client}
+                        eventDate={selectedEventForSession?.date}
+                        eventTime={selectedEventForSession?.time}
+                        endTime={selectedEventForSession?.end_time || selectedEventForSession?.time}
+                        location={selectedEventForSession?.location}
+                        studentIds={selectedEventForSession?.student_id ? [selectedEventForSession.student_id] : []}
+                        onSuccess={() => {
+                            setLastUpdate(Date.now());
+                        }}
+                    />
                 </div>
             </TooltipProvider>
         </DndContext>

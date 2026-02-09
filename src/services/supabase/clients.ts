@@ -3,12 +3,12 @@ import { createClient } from "@/lib/supabase/client";
 import { QueryData } from '@supabase/supabase-js';
 
 export type Client = {
-    id: string; // Changed to string to match UUID
+    id: string;
     name: string;
     email: string;
-    objetivo: string | null; // Nullable in DB
-    plan: string; // Derived or joined
-    status: string; // Mapped from StudentStatus
+    objetivo: string | null;
+    plan: string;
+    status: 'active' | 'overdue' | 'inactive';
     avatar: string | null;
     primaryUnitId: string;
 }
@@ -24,13 +24,11 @@ export async function getClients(unitId?: string, search?: string): Promise<Clie
             email,
             avatar_url,
             status,
+            objective,
             unit_id,
             student_plan_assignments (
                 plan_name,
                 status
-            ),
-            workouts (
-                goal
             )
         `);
 
@@ -60,30 +58,19 @@ export async function getClients(unitId?: string, search?: string): Promise<Clie
 }
 
 function mapStudentToClient(student: any): Client {
-    // Note: 'student' is strictly typed as ClientsResponse[number] in usage, 
-    // but explicit typing here requires exporting the type or using return type inference.
-    // We use 'any' here for simplicity in helper but it is safe because it is called with typed data.
-    // Ideally we would infer the type from the query.
-
     // student_plan_assignments is an array due to 1:N relation
     const assignments = student.student_plan_assignments;
     const activePlan = Array.isArray(assignments)
         ? assignments.find((p: any) => p.status === 'ACTIVE')
         : null;
 
-    // workouts is an array
-    const workouts = student.workouts;
-    const goal = Array.isArray(workouts) && workouts.length > 0
-        ? workouts[0].goal || 'Não informado'
-        : 'Não informado';
-
     return {
         id: student.id,
         name: student.full_name,
         email: student.email || '',
-        objetivo: goal,
-        plan: activePlan ? activePlan.plan_name : 'Sem Plano',
-        status: student.status === 'ACTIVE' ? 'Ativo' : student.status === 'INACTIVE' ? 'Inativo' : 'Cancelado',
+        objetivo: student.objective || 'Não informado',
+        plan: activePlan ? activePlan.plan_name : (student.plans?.name || 'Sem Plano'),
+        status: student.status === 'ACTIVE' ? 'active' : student.status === 'INACTIVE' ? 'inactive' : 'overdue',
         avatar: student.avatar_url,
         primaryUnitId: student.unit_id
     };

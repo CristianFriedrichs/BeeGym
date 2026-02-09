@@ -1,12 +1,12 @@
 'use client';
 
-import {
-  Card,
-} from '@/components/ui/card';
+import { useState, useEffect, useMemo } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Plus, Search } from 'lucide-react';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search } from 'lucide-react';
-import Image from 'next/image';
 import {
   Table,
   TableBody,
@@ -15,10 +15,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { getClients, Client } from '@/services/supabase/clients';
+import { cn } from '@/lib/utils';
 
 export default function ClientsPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -26,17 +26,11 @@ export default function ClientsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  // Mock Unit ID for now - in a real app this would come from Auth Context
-  const currentUnitId = "unit-1";
-
   useEffect(() => {
     async function fetchClients() {
       setIsLoading(true);
       try {
-        // Fetch clients for the current unit (mocked ID for now until Auth is ready)
-        // Pass searchTerm to the service to let Supabase handle filtering if desired,
-        // or filter locally. The service supports server-side search.
-        const data = await getClients(undefined, searchTerm); // undefined unitId to fetch all for now or currentUnitId
+        const data = await getClients();
         setClients(data);
       } catch (error) {
         console.error("Failed to fetch clients", error);
@@ -45,113 +39,130 @@ export default function ClientsPage() {
       }
     }
 
-    // Debounce search could be added here
-    const timer = setTimeout(() => {
-      fetchClients();
-    }, 300);
+    fetchClients();
+  }, []);
 
-    return () => clearTimeout(timer);
-  }, [searchTerm]);
+  const filteredClients = useMemo(() => {
+    if (!searchTerm) return clients;
+    const lowerSearch = searchTerm.toLowerCase();
+    return clients.filter(client =>
+      client.name.toLowerCase().includes(lowerSearch) ||
+      client.email.toLowerCase().includes(lowerSearch)
+    );
+  }, [clients, searchTerm]);
 
   const handleViewDetails = (clientId: string) => {
     router.push(`/dashboard/clients/${clientId}`);
   };
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-6">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Alunos</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-3xl font-display font-bold text-[#1A1C1E]">Alunos</h1>
+          <p className="text-[#64748B] text-sm mt-1">
             Gerenciamento de alunos e matrículas
           </p>
         </div>
-        <Button asChild>
+        <Button
+          asChild
+          className="bg-[#FF8800] hover:bg-[#E67A00] text-white font-bold px-6 py-6 rounded-xl transition-all shadow-lg shadow-orange-500/20"
+        >
           <Link href="/dashboard/clients/new">
-            <Plus className="h-4 w-4 mr-2" /> Novo Aluno
+            <Plus className="h-5 w-5 mr-2 stroke-[3px]" /> Novo Aluno
           </Link>
         </Button>
       </div>
 
-      <Card className="shadow-soft rounded-2xl overflow-hidden border-gray-100 dark:border-gray-800">
-        <div className="p-6 border-b flex items-center gap-4">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+      <Card className="shadow-soft rounded-[24px] overflow-hidden border-[#F1F5F9] border-2 bg-white px-2">
+        {/* Search Bar Area */}
+        <div className="p-6">
+          <div className="relative max-w-[320px]">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
             <Input
               placeholder="Buscar aluno..."
-              className="pl-10 bg-gray-50 dark:bg-gray-800/50 border-none"
+              className="pl-12 bg-[#F8F9FA] border-none h-12 rounded-2xl text-md focus-visible:ring-1 focus-visible:ring-primary/20 transition-all"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
         </div>
 
+        {/* Table Area */}
         <Table>
-          <TableHeader className="bg-gray-50/50 dark:bg-gray-800/20">
-            <TableRow>
-              <TableHead>Aluno</TableHead>
-              <TableHead>Objetivo</TableHead>
-              <TableHead>Plano</TableHead>
-              <TableHead>Status</TableHead>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent border-none">
+              <TableHead className="text-[#64748B] font-medium h-12">Aluno</TableHead>
+              <TableHead className="text-[#64748B] font-medium h-12">Objetivo</TableHead>
+              <TableHead className="text-[#64748B] font-medium h-12">Plano</TableHead>
+              <TableHead className="text-[#64748B] font-medium h-12">Status</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={4} className="h-24 text-center">
-                  Carregando...
+                <TableCell colSpan={4} className="h-32 text-center text-muted-foreground">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+                    Carregando alunos...
+                  </div>
                 </TableCell>
               </TableRow>
-            ) : clients.length === 0 ? (
+            ) : filteredClients.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="h-24 text-center">
-                  Nenhum aluno encontrado.
+                <TableCell colSpan={4} className="h-32 text-center text-muted-foreground">
+                  Nenhum aluno encontrado para sua busca.
                 </TableCell>
               </TableRow>
             ) : (
-              clients.map((client) => (
+              filteredClients.map((client) => (
                 <TableRow
                   key={client.id}
-                  className="hover:bg-gray-50/50 dark:hover:bg-gray-800/40 transition-colors cursor-pointer"
+                  className="hover:bg-[#F8F9FA] transition-all cursor-pointer border-b border-[#F1F5F9] group h-[72px]"
                   onClick={() => handleViewDetails(client.id)}
                 >
-                  <TableCell className="py-4">
-                    <div className="flex items-center gap-3">
-                      {client.avatar ? (
-                        <Image
-                          src={client.avatar}
-                          width={40}
-                          height={40}
-                          className="rounded-full object-cover"
-                          alt={client.name}
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-bold">
+                  <TableCell className="py-2">
+                    <div className="flex items-center gap-4">
+                      <Avatar className="h-11 w-11 border-2 border-white shadow-sm">
+                        <AvatarImage src={client.avatar || undefined} className="object-cover" />
+                        <AvatarFallback className="bg-primary/10 text-primary font-bold">
                           {client.name.substring(0, 2).toUpperCase()}
-                        </div>
-                      )}
+                        </AvatarFallback>
+                      </Avatar>
 
-                      <div>
-                        <p className="font-bold">{client.name}</p>
-                        <p className="text-xs text-muted-foreground">
+                      <div className="flex flex-col">
+                        <span className="font-bold text-[#1A1C1E] group-hover:text-primary transition-colors">
+                          {client.name}
+                        </span>
+                        <span className="text-xs text-[#64748B]">
                           {client.email}
-                        </p>
+                        </span>
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>{client.objetivo}</TableCell>
-                  <TableCell>{client.plan}</TableCell>
+
+                  <TableCell className="text-[#1A1C1E] font-medium">
+                    {client.objetivo}
+                  </TableCell>
+
+                  <TableCell className="text-[#1A1C1E] font-medium">
+                    {client.plan}
+                  </TableCell>
+
                   <TableCell>
-                    <span
-                      className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${client.status === 'Ativo'
-                          ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                          : client.status === 'Inadimplente'
-                            ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                            : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
-                        }`}
+                    <Badge
+                      className={cn(
+                        "rounded-full px-4 py-1.5 text-[10px] font-black uppercase border-none shadow-none",
+                        client.status === 'active'
+                          ? "bg-[#E8F5E9] text-[#2E7D32] hover:bg-[#E8F5E9]"
+                          : client.status === 'overdue'
+                            ? "bg-[#FFEBEE] text-[#D32F2F] hover:bg-[#FFEBEE]"
+                            : "bg-[#F5F5F5] text-[#757575] hover:bg-[#F5F5F5]"
+                      )}
                     >
-                      {client.status}
-                    </span>
+                      {client.status === 'active' ? 'ATIVO' : client.status === 'overdue' ? 'INADIMPLENTE' : 'INATIVO'}
+                    </Badge>
                   </TableCell>
                 </TableRow>
               ))

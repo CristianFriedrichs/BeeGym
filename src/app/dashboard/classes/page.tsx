@@ -1,20 +1,25 @@
 'use client';
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { RecurringClass, getIcon, classColorStyles } from '@/lib/class-definitions';
+import { CreateRecurringClassModal } from '@/components/dashboard/modals/create-recurring-class-modal';
 
 export default function ClassesPage() {
   const [classes, setClasses] = useState<RecurringClass[]>([]);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
 
   useEffect(() => {
+    fetchClasses();
+  }, []);
+
+  function fetchClasses() {
     const storedClasses = JSON.parse(localStorage.getItem('recurring_classes') || '[]');
     setClasses(storedClasses);
-  }, []);
+  }
 
   return (
     <div className="space-y-8">
@@ -23,10 +28,8 @@ export default function ClassesPage() {
           <h1 className="text-3xl font-bold tracking-tight">Aulas</h1>
           <p className="text-muted-foreground">Gerenciamento de aulas coletivas</p>
         </div>
-        <Button asChild>
-          <Link href="/dashboard/classes/new">
-            <Plus className="h-4 w-4 mr-2" /> Nova Aula
-          </Link>
+        <Button onClick={() => setCreateModalOpen(true)} className="bg-primary hover:bg-primary/90">
+          <Plus className="h-4 w-4 mr-2" /> Aula
         </Button>
       </div>
 
@@ -90,6 +93,15 @@ export default function ClassesPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Modal */}
+      <CreateRecurringClassModal
+        open={createModalOpen}
+        onOpenChange={setCreateModalOpen}
+        onSuccess={() => {
+          fetchClasses();
+        }}
+      />
     </div>
   );
 }

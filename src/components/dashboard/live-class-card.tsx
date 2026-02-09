@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { MapPin, Timer, ChevronLeft, ChevronRight, GraduationCap, Dumbbell, Calendar, Plus, Check } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -11,8 +11,8 @@ import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { NewWorkoutModal } from './modals/new-workout-modal';
-import { NewClassModal } from './modals/new-class-modal';
+import { NewTrainingModal } from './modals/new-training-modal';
+import { CreateRecurringClassModal } from './modals/create-recurring-class-modal';
 
 interface LiveEvent {
     id: string;
@@ -87,81 +87,81 @@ export function LiveClassCard() {
     const currentEvent = liveEvents[currentEventIndex];
     const elapsedTime = useElapsedTime(currentEvent?.start_time || new Date().toISOString());
 
-    useEffect(() => {
-        async function fetchLiveEvents() {
-            try {
-                const { data: { user } } = await supabase.auth.getUser();
-                if (!user) return;
+    const fetchLiveEvents = useCallback(async () => {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
 
-                const { data: userData } = await supabase
-                    .from('users')
-                    .select('organization_id')
-                    .eq('id', user.id)
-                    .single();
+            const { data: userData } = await supabase
+                .from('users')
+                .select('organization_id')
+                .eq('id', user.id)
+                .single();
 
-                if (!userData?.organization_id) return;
+            if (!userData?.organization_id) return;
 
-                const now = new Date();
-                const currentTime = now.toTimeString().slice(0, 8); // HH:MM:SS
-                const currentDate = now.toISOString().split('T')[0]; // YYYY-MM-DD
+            const now = new Date();
+            const currentTime = now.toTimeString().slice(0, 8); // HH:MM:SS
+            const currentDate = now.toISOString().split('T')[0]; // YYYY-MM-DD
 
-                // Simplified query - fetch events with instructor join
-                const { data: events, error } = await supabase
-                    .from('calendar_events')
-                    .select(`
+            // Simplified query - fetch events with instructor join
+            const { data: events, error } = await supabase
+                .from('calendar_events')
+                .select(`
             *,
             instructor:users!calendar_events_instructor_id_fkey(id, full_name, avatar_url),
             unit:units(id, name),
             room:rooms(id, name)
           `)
-                    .eq('organization_id', userData.organization_id)
-                    .eq('date', currentDate)
-                    .lte('start_time', currentTime)
-                    .gte('end_time', currentTime)
-                    .in('status', ['SCHEDULED', 'IN_PROGRESS'])
-                    .order('start_time');
+                .eq('organization_id', userData.organization_id)
+                .eq('date', currentDate)
+                .lte('start_time', currentTime)
+                .gte('end_time', currentTime)
+                .in('status', ['SCHEDULED', 'IN_PROGRESS'])
+                .order('start_time');
 
-                if (error) {
-                    console.error('Error fetching live events:', error);
-                    setLiveEvents([]);
-                    return;
-                }
+            if (error) {
+                console.error('Error fetching live events:', error);
+                setLiveEvents([]);
+                return;
+            }
 
-                // Fetch attendees separately for each event
-                const eventsWithAttendees = await Promise.all(
-                    (events || []).map(async (event) => {
-                        const { data: attendees } = await supabase
-                            .from('attendance_logs')
-                            .select(`
+            // Fetch attendees separately for each event
+            const eventsWithAttendees = await Promise.all(
+                (events || []).map(async (event) => {
+                    const { data: attendees } = await supabase
+                        .from('attendance_logs')
+                        .select(`
                 id,
                 status,
                 confirmed_by_user,
                 student:students(id, full_name, avatar_url)
               `)
-                            .eq('event_id', event.id);
+                        .eq('event_id', event.id);
 
-                        return {
-                            ...event,
-                            attendees: attendees || []
-                        };
-                    })
-                );
+                    return {
+                        ...event,
+                        attendees: attendees || []
+                    };
+                })
+            );
 
-                setLiveEvents(eventsWithAttendees);
-            } catch (error) {
-                console.error('Error in fetchLiveEvents:', error);
-                setLiveEvents([]);
-            } finally {
-                setIsLoading(false);
-            }
+            setLiveEvents(eventsWithAttendees);
+        } catch (error) {
+            console.error('Error in fetchLiveEvents:', error);
+            setLiveEvents([]);
+        } finally {
+            setIsLoading(false);
         }
+    }, [supabase]);
 
+    useEffect(() => {
         fetchLiveEvents();
 
         // Refresh every 30 seconds
         const interval = setInterval(fetchLiveEvents, 30000);
         return () => clearInterval(interval);
-    }, [supabase]);
+    }, [fetchLiveEvents]);
 
     // Quick check-in handler
     const handleQuickCheckIn = async (attendanceLogId: string, studentName: string) => {
@@ -246,14 +246,14 @@ export function LiveClassCard() {
                             className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-6 py-2 rounded-lg shadow-sm"
                         >
                             <Plus className="mr-2 h-4 w-4" />
-                            + Novo Treino
+                            Treino
                         </Button>
                         <Button
                             onClick={() => setClassModalOpen(true)}
                             className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-6 py-2 rounded-lg shadow-sm"
                         >
                             <Plus className="mr-2 h-4 w-4" />
-                            + Nova Aula
+                            Aula
                         </Button>
                     </div>
                 </div>
@@ -443,6 +443,24 @@ export function LiveClassCard() {
                     </div>
                 )}
             </section>
+
+            {/* Modals */}
+            <NewTrainingModal
+                open={workoutModalOpen}
+                onOpenChange={setWorkoutModalOpen}
+                onSuccess={() => {
+                    setIsLoading(true);
+                    fetchLiveEvents();
+                }}
+            />
+            <CreateRecurringClassModal
+                open={classModalOpen}
+                onOpenChange={setClassModalOpen}
+                onSuccess={() => {
+                    setIsLoading(true);
+                    fetchLiveEvents();
+                }}
+            />
         </TooltipProvider>
     );
 }
