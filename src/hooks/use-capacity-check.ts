@@ -33,7 +33,7 @@ export function useCapacityCheck() {
             }
 
             const { data: userData } = await supabase
-                .from('users')
+                .from('profiles')
                 .select('organization_id')
                 .eq('id', user.id)
                 .single();
@@ -42,11 +42,13 @@ export function useCapacityCheck() {
                 throw new Error('Organization not found');
             }
 
+            const orgId = userData.organization_id as string;
+
             // Count existing bookings for this time slot
             const { data: events, error } = await supabase
                 .from('calendar_events')
                 .select('id')
-                .eq('organization_id', userData.organization_id)
+                .eq('organization_id', orgId)
                 .eq('day_of_week', dayOfWeek)
                 .eq('start_time', time);
 

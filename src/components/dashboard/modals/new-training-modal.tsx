@@ -11,13 +11,18 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { createClient } from '@/lib/supabase/client';
-import { MultiSelect, MultiSelectOption } from '@/components/ui/multi-select';
+import { MultiSelect } from '@/components/ui/multi-select';
 import {
     CalendarIcon, Clock, Home, Users as UsersIcon, User, LayoutGrid, Dumbbell
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+
+interface MultiSelectOption {
+    value: string;
+    label: string;
+}
 
 interface NewTrainingModalProps {
     open: boolean;
@@ -92,7 +97,7 @@ export function NewTrainingModal({ open, onOpenChange, onSuccess }: NewTrainingM
             if (!user) return;
 
             const { data: userData } = await supabase
-                .from('users')
+                .from('profiles')
                 .select('organization_id')
                 .eq('id', user.id)
                 .single();
@@ -102,20 +107,23 @@ export function NewTrainingModal({ open, onOpenChange, onSuccess }: NewTrainingM
             // Fetch students
             const { data: studentsData } = await supabase
                 .from('students')
-                .select('id, name')
-                .eq('organization_id', userData.organization_id)
-                .order('name');
-
-            if (studentsData) setStudents(studentsData);
-
-            // Fetch instructors
-            const { data: instructorsData } = await supabase
-                .from('users')
                 .select('id, full_name')
                 .eq('organization_id', userData.organization_id)
                 .order('full_name');
 
-            if (instructorsData) setInstructors(instructorsData as Instructor[]);
+            if (studentsData) setStudents((studentsData as any[]).map(s => ({
+                id: s.id,
+                name: s.full_name
+            })));
+
+            // Fetch instructors from profiles
+            const { data: instructorsData } = await supabase
+                .from('profiles')
+                .select('id, full_name')
+                .eq('organization_id', userData.organization_id)
+                .order('full_name');
+
+            if (instructorsData) setInstructors(instructorsData as any[]);
 
             // Fetch rooms
             const { data: roomsData } = await supabase
@@ -196,67 +204,89 @@ export function NewTrainingModal({ open, onOpenChange, onSuccess }: NewTrainingM
             if (!user) throw new Error('Usuário não autenticado');
 
             const { data: userData } = await supabase
-                .from('users')
+                .from('profiles')
                 .select('organization_id')
                 .eq('id', user.id)
                 .single();
 
             if (!userData?.organization_id) throw new Error('Organização não encontrada');
 
+            const startDate = new Date(selectedDate);
+            const [hours, minutes] = selectedTime.split(':').map(Number);
+            startDate.setHours(hours, minutes, 0, 0);
+
+            const endDate = new Date(startDate);
+            endDate.setMinutes(endDate.getMinutes() + parseInt(selectedDuration));
+
             const baseEvent = {
-                name: trainingName,
+                title: trainingName,
                 instructor_id: selectedInstructor,
                 room_id: selectedRoom,
                 organization_id: userData.organization_id,
-                date: format(selectedDate, 'yyyy-MM-dd'),
-                start_time: selectedTime,
-                duration: parseInt(selectedDuration),
+                start_datetime: startDate.toISOString(),
+                end_datetime: endDate.toISOString(),
                 status: 'SCHEDULED',
             };
 
             if (modality === 'individual') {
-                // Individual: 1 evento com student_id
-                const { error } = await supabase
-                    .from('calendar_events')
+                // Individual: insert event then attendance
+                const { data: eventData, error: eventError } = await (supabase
+                    .from('calendar_events') as any)
                     .insert({
                         ...baseEvent,
-                        student_id: selectedStudent,
-                        event_type: 'TREINO',
-                    });
+                        type: 'TRAINING',
+                    })
+                    .select()
+                    .single();
 
-                if (error) throw error;
+                if (eventError) throw eventError;
+
+                if (eventData) {
+                    await (supabase.from('attendance_logs' as any) as any).insert({
+                        event_id: eventData.id,
+                        student_id: selectedStudent,
+                        present: false
+                    });
+                }
 
                 toast({
                     title: 'Treino agendado!',
                     description: 'Treino individual criado com sucesso.',
                 });
             } else if (modality === 'group') {
-                // Grupo Definido: N eventos (1 por aluno)
-                const eventsToInsert = selectedStudents.map(studentId => ({
-                    ...baseEvent,
-                    student_id: studentId,
-                    event_type: 'TREINO',
-                }));
+                // Grupo Definido: insert event then multiple attendances
+                const { data: eventData, error: eventError } = await (supabase
+                    .from('calendar_events') as any)
+                    .insert({
+                        ...baseEvent,
+                        type: 'TRAINING',
+                    })
+                    .select()
+                    .single();
 
-                const { error } = await supabase
-                    .from('calendar_events')
-                    .insert(eventsToInsert);
+                if (eventError) throw eventError;
 
-                if (error) throw error;
+                if (eventData) {
+                    const attendances = selectedStudents.map(studentId => ({
+                        event_id: eventData.id,
+                        student_id: studentId,
+                        present: false
+                    }));
+                    await (supabase.from('attendance_logs' as any) as any).insert(attendances);
+                }
 
                 toast({
                     title: 'Treinos agendados!',
-                    description: `${selectedStudents.length} treino(s) criado(s) com sucesso.`,
+                    description: `${selectedStudents.length} aluno(s) adicionados ao treino.`,
                 });
             } else {
-                // Grupo Aberto: 1 evento com student_id = NULL e capacity
-                const { error } = await supabase
-                    .from('calendar_events')
+                // Grupo Aberto: 1 evento com capacity
+                const { error } = await (supabase
+                    .from('calendar_events') as any)
                     .insert({
                         ...baseEvent,
-                        student_id: null,
-                        capacity_limit: parseInt(capacity),
-                        event_type: 'TREINO_ABERTO',
+                        capacity: parseInt(capacity),
+                        type: 'CLASS',
                     });
 
                 if (error) throw error;
@@ -401,7 +431,6 @@ export function NewTrainingModal({ open, onOpenChange, onSuccess }: NewTrainingM
                                     selected={selectedStudents}
                                     onChange={setSelectedStudents}
                                     placeholder="Selecione os alunos"
-                                    emptyText="Nenhum aluno encontrado."
                                 />
                             </div>
                         )}

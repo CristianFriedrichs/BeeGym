@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from '@/hooks/use-toast';
-import { students } from '../page';
+import { initialClients as students } from '@/lib/mock-data';
 import { plans, planHistory } from '@/lib/plans';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -30,13 +30,13 @@ const PlanPage = () => {
 
     const currentPlan = plans.find(p => p.id === student?.plan);
     const initialDiscount = student?.discount || { type: 'percentage', value: 0 };
-    
+
     const [selectedPlanId, setSelectedPlanId] = useState(currentPlan?.id || '');
     const [discountType, setDiscountType] = useState(initialDiscount.type);
     const [discountValue, setDiscountValue] = useState(initialDiscount.value);
     const [dueDate, setDueDate] = useState<Date | undefined>(new Date());
     const [fixedSchedules, setFixedSchedules] = useState<{ day: string; time: string; location: string }[]>([]);
-    
+
     const timeSlots: string[] = [];
     for (let h = 6; h < 23; h++) { // from 6am to 10:30pm
         timeSlots.push(`${String(h).padStart(2, '0')}:00`);
@@ -44,7 +44,7 @@ const PlanPage = () => {
     }
 
     const selectedPlanDetails = useMemo(() => plans.find(p => p.id === selectedPlanId), [selectedPlanId]);
-    
+
     useEffect(() => {
         if (selectedPlanDetails?.scheduleType === 'fixed' && selectedPlanDetails.classesPerWeek) {
             const newSchedules = Array.from({ length: selectedPlanDetails.classesPerWeek }, () => ({
@@ -88,7 +88,7 @@ const PlanPage = () => {
     }
 
     const currentPlanPrice = parseFloat(currentPlan.price.replace('R$ ', '').replace(',', '.'));
-    const currentFinalPrice = student.discount.type === 'percentage' 
+    const currentFinalPrice = student.discount.type === 'percentage'
         ? currentPlanPrice * (1 - student.discount.value / 100)
         : currentPlanPrice - student.discount.value;
 
@@ -100,7 +100,7 @@ const PlanPage = () => {
                     <ArrowLeft className="h-4 w-4" />
                 </Button>
                 <Avatar className="h-12 w-12">
-                    <AvatarImage src={student.avatar} alt={student.name}/>
+                    <AvatarImage src={student.avatar} alt={student.name} />
                     <AvatarFallback>{student.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div>
@@ -117,36 +117,36 @@ const PlanPage = () => {
                             <CardDescription>Informações sobre a assinatura vigente e histórico de alterações.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                             <div className="space-y-8">
+                            <div className="space-y-8">
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4 text-sm">
-                                   <div className="lg:col-span-1">
+                                    <div className="lg:col-span-1">
                                         <p className="font-semibold text-muted-foreground">Nome do Plano</p>
                                         <p className="font-bold">{currentPlan.name}</p>
-                                   </div>
-                                   <div className="lg:col-span-2">
+                                    </div>
+                                    <div className="lg:col-span-2">
                                         <p className="font-semibold text-muted-foreground">Modelo de Cobrança</p>
                                         <p className="font-bold">Mensal</p>
-                                   </div>
-                                   <div className="lg:col-span-1">
+                                    </div>
+                                    <div className="lg:col-span-1">
                                         <p className="font-semibold text-muted-foreground">Data de Início</p>
                                         <p>{student.memberSince}</p>
-                                   </div>
-                                   <div className="lg:col-span-2">
+                                    </div>
+                                    <div className="lg:col-span-2">
                                         <p className="font-semibold text-muted-foreground">Próximo Vencimento</p>
                                         <p>12 de Ago, 2024</p>
-                                   </div>
-                                   <div className="col-span-1">
+                                    </div>
+                                    <div className="col-span-1">
                                         <p className="font-semibold text-muted-foreground">Valor Original</p>
                                         <p>{currentPlan.price}</p>
-                                   </div>
+                                    </div>
                                     <div className="col-span-1">
                                         <p className="font-semibold text-muted-foreground">Desconto</p>
                                         <p>{student.discount.type === 'percentage' ? `${student.discount.value}%` : `R$ ${student.discount.value.toFixed(2)}`}</p>
-                                   </div>
-                                   <div className="col-span-1">
+                                    </div>
+                                    <div className="col-span-1">
                                         <p className="font-semibold text-muted-foreground">Valor Final</p>
                                         <p className="text-xl font-bold text-primary">R$ {currentFinalPrice.toFixed(2)}</p>
-                                   </div>
+                                    </div>
                                 </div>
                                 <div className="border-t pt-8">
                                     <h4 className="font-semibold mb-4 text-card-foreground">Histórico de Alterações</h4>
@@ -154,7 +154,7 @@ const PlanPage = () => {
                                         {planHistory.map((item, index) => (
                                             <div key={index} className="flex items-start gap-4">
                                                 <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                                                    <CreditCard className="h-4 w-4 text-muted-foreground"/>
+                                                    <CreditCard className="h-4 w-4 text-muted-foreground" />
                                                 </div>
                                                 <div className="text-sm">
                                                     <p className="font-semibold">{item.action}</p>
@@ -169,13 +169,13 @@ const PlanPage = () => {
                         </CardContent>
                     </Card>
 
-                     <Card>
+                    <Card>
                         <CardHeader>
                             <CardTitle>Alterar Plano</CardTitle>
-                             <CardDescription>Selecione um novo plano, aplique descontos e defina a data de vencimento.</CardDescription>
+                            <CardDescription>Selecione um novo plano, aplique descontos e defina a data de vencimento.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
-                             <div className="space-y-2">
+                            <div className="space-y-2">
                                 <Label>Selecionar Novo Plano</Label>
                                 <Select value={selectedPlanId} onValueChange={setSelectedPlanId}>
                                     <SelectTrigger>
@@ -192,9 +192,9 @@ const PlanPage = () => {
                                     <Label>Desconto</Label>
                                     <div className="flex items-center gap-2">
                                         <RadioGroup value={discountType} onValueChange={(v) => setDiscountType(v as 'percentage' | 'fixed')} className="flex items-center space-x-1 rounded-lg border bg-card p-1">
-                                            <RadioGroupItem value="percentage" id="percentage" className="sr-only"/>
+                                            <RadioGroupItem value="percentage" id="percentage" className="sr-only" />
                                             <Label htmlFor="percentage" className={cn("rounded-md px-2.5 py-1.5 text-sm cursor-pointer", discountType === 'percentage' && 'bg-muted font-semibold')}>%</Label>
-                                            <RadioGroupItem value="fixed" id="fixed" className="sr-only"/>
+                                            <RadioGroupItem value="fixed" id="fixed" className="sr-only" />
                                             <Label htmlFor="fixed" className={cn("rounded-md px-2.5 py-1.5 text-sm cursor-pointer", discountType === 'fixed' && 'bg-muted font-semibold')}>R$</Label>
                                         </RadioGroup>
                                         <Input type="number" value={discountValue} onChange={(e) => setDiscountValue(Number(e.target.value))} />
@@ -208,7 +208,7 @@ const PlanPage = () => {
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div className="space-y-2">
                                 <Label>Nova Data de Vencimento</Label>
                                 <Popover>
@@ -302,7 +302,7 @@ const PlanPage = () => {
                             </CardContent>
                         </Card>
                     )}
-                    
+
                     <div className="flex justify-end gap-2">
                         <Button variant="ghost" type="button" onClick={() => router.back()}>Cancelar</Button>
                         <Button type="submit">Salvar Alterações</Button>

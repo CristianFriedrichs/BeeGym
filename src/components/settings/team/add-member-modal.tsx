@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -33,15 +34,45 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { UserPlus } from 'lucide-react';
+import { UserPlus, Info, Loader2 } from 'lucide-react';
 import { createTeamMemberAction } from '@/actions/team';
+import { getRolesAction } from '@/actions/roles';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import type { AppRole } from '@/types/permissions';
 
 const formSchema = z.object({
     fullName: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
-    email: z.string().email('Email inválido'),
-    password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
-    role: z.enum(['ADMIN', 'INSTRUCTOR', 'STAFF', 'OWNER', 'MANAGER']),
+    jobTitle: z.string().optional(),
+    isInstructor: z.boolean().default(false),
     hasSystemAccess: z.boolean().default(true),
+    roleId: z.string().optional(),
+    email: z.string().optional(),
+    password: z.string().optional(),
+}).refine((data) => {
+    if (data.hasSystemAccess) {
+        return data.email && data.email.length > 0 &&
+            data.password && data.password.length >= 6;
+    }
+    return true;
+}, {
+    message: "Email e senha são obrigatórios quando o acesso ao sistema está habilitado",
+    path: ["email"],
+}).refine((data) => {
+    if (data.hasSystemAccess && data.email) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email);
+    }
+    return true;
+}, {
+    message: "Email inválido",
+    path: ["email"],
+}).refine((data) => {
+    if (data.hasSystemAccess) {
+        return data.roleId && data.roleId.length > 0;
+    }
+    return true;
+}, {
+    message: "Selecione um perfil de permissões",
+    path: ["roleId"],
 });
 
 interface AddMemberModalProps {
@@ -50,35 +81,66 @@ interface AddMemberModalProps {
 
 export function AddMemberModal({ organizationId }: AddMemberModalProps) {
     const { toast } = useToast();
+    const router = useRouter();
     const [open, setOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [roles, setRoles] = useState<AppRole[]>([]);
+    const [isLoadingRoles, setIsLoadingRoles] = useState(false);
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             fullName: '',
+            jobTitle: '',
             email: '',
             password: '',
-            role: 'STAFF',
+            isInstructor: false,
             hasSystemAccess: true,
+            roleId: '',
         },
     });
+
+    const hasSystemAccess = form.watch('hasSystemAccess');
+
+    useEffect(() => {
+        if (open) {
+            setIsLoadingRoles(true);
+            getRolesAction().then((result) => {
+                if (result.success && result.data) {
+                    setRoles(result.data as AppRole[]);
+                }
+                setIsLoadingRoles(false);
+            });
+        }
+    }, [open]);
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setIsSubmitting(true);
         try {
             const result = await createTeamMemberAction({
-                ...values,
+                fullName: values.fullName,
+                email: values.email,
+                password: values.password,
+                role: 'STAFF',
+                roleId: values.roleId || undefined,
                 organizationId,
+                hasSystemAccess: values.hasSystemAccess,
+                isInstructor: values.isInstructor,
             });
+
 
             if (result.success) {
                 toast({
                     title: 'Sucesso',
                     description: 'Membro da equipe criado com sucesso!',
                 });
+
                 setOpen(false);
-                form.reset();
+
+                setTimeout(() => {
+                    router.refresh();
+                    form.reset();
+                }, 300);
             } else {
                 toast({
                     title: 'Erro',
@@ -105,103 +167,198 @@ export function AddMemberModal({ organizationId }: AddMemberModalProps) {
                     Adicionar Membro
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                    <DialogTitle>Novo Membro da Equipe</DialogTitle>
-                    <DialogDescription>
-                        Adicione um novo colaborador à sua organização. Eles receberão um convite por email.
-                    </DialogDescription>
-                </DialogHeader>
+            <DialogContent className="sm:max-w-[425px] h-[85vh] flex flex-col p-0">
+                <div className="px-6 pt-6">
+                    <DialogHeader>
+                        <DialogTitle>Novo Membro da Equipe</DialogTitle>
+                        <DialogDescription>
+                            Adicione um novo colaborador à sua organização.
+                        </DialogDescription>
+                    </DialogHeader>
+                </div>
 
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        <FormField
-                            control={form.control}
-                            name="fullName"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Nome Completo</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="Ex: João Silva" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="email"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Email Profissional</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="joao@exemplo.com" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="password"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Senha Inicial</FormLabel>
-                                    <FormControl>
-                                        <Input type="password" placeholder="Min. 6 caracteres" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="role"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Cargo / Perfil</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+                        <div className="flex-1 overflow-y-auto px-6 space-y-4">
+                            <FormField
+                                control={form.control}
+                                name="fullName"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Nome Completo</FormLabel>
                                         <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Selecione um cargo" />
-                                            </SelectTrigger>
+                                            <Input placeholder="Ex: João Silva" {...field} />
                                         </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="ADMIN">Administrador</SelectItem>
-                                            <SelectItem value="INSTRUCTOR">Instrutor</SelectItem>
-                                            <SelectItem value="STAFF">Staff / Recepção</SelectItem>
-                                            <SelectItem value="MANAGER">Gerente</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="hasSystemAccess"
-                            render={({ field }) => (
-                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                                    <div className="space-y-0.5">
-                                        <FormLabel>Acesso ao Sistema</FormLabel>
-                                        <FormDescription>
-                                            Permitir que o usuário faça login no BeeGym.
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="jobTitle"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Cargo / Título (Crachá)</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="Ex: Recepcionista, Personal Trainer" {...field} />
+                                        </FormControl>
+                                        <FormDescription className="text-xs">
+                                            Texto livre para identificação visual. Não afeta permissões.
                                         </FormDescription>
-                                    </div>
-                                    <FormControl>
-                                        <Switch
-                                            checked={field.value}
-                                            onCheckedChange={field.onChange}
-                                        />
-                                    </FormControl>
-                                </FormItem>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="isInstructor"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                                        <div className="space-y-0.5">
+                                            <FormLabel>Pode ministrar aulas?</FormLabel>
+                                            <FormDescription className="text-xs">
+                                                Habilitar este membro a ser selecionado como instrutor.
+                                            </FormDescription>
+                                        </div>
+                                        <FormControl>
+                                            <Switch
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                            />
+                                        </FormControl>
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="hasSystemAccess"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-muted/50">
+                                        <div className="space-y-0.5">
+                                            <FormLabel>Acesso ao Sistema</FormLabel>
+                                            <FormDescription className="text-xs">
+                                                Permitir que o usuário faça login no BeeGym.
+                                            </FormDescription>
+                                        </div>
+                                        <FormControl>
+                                            <Switch
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                            />
+                                        </FormControl>
+                                    </FormItem>
+                                )}
+                            />
+
+                            {hasSystemAccess && (
+                                <>
+                                    <FormField
+                                        control={form.control}
+                                        name="roleId"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Perfil de Permissões</FormLabel>
+                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                    <FormControl>
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder={
+                                                                isLoadingRoles
+                                                                    ? 'Carregando perfis...'
+                                                                    : 'Selecione (ex: Recepção, Gerente)...'
+                                                            } />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        {roles.length === 0 && !isLoadingRoles ? (
+                                                            <div className="py-3 px-2 text-center text-sm text-muted-foreground">
+                                                                Nenhum perfil criado.
+                                                                <br />
+                                                                <span className="text-xs">Crie em Configurações {'>'} Perfis de Acesso.</span>
+                                                            </div>
+                                                        ) : (
+                                                            roles.map((role) => (
+                                                                <SelectItem key={role.id} value={role.id}>
+                                                                    {role.name}
+                                                                </SelectItem>
+                                                            ))
+                                                        )}
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormDescription className="text-xs">
+                                                    Define o que este membro pode acessar no sistema.
+                                                </FormDescription>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+
+                                    <Alert>
+                                        <Info className="h-4 w-4" />
+                                        <AlertDescription className="text-xs">
+                                            O usuário receberá uma senha temporária e será solicitado a alterá-la no primeiro acesso.
+                                        </AlertDescription>
+                                    </Alert>
+
+                                    <FormField
+                                        control={form.control}
+                                        name="email"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Email Profissional</FormLabel>
+                                                <FormControl>
+                                                    <Input placeholder="joao@exemplo.com" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+
+                                    <FormField
+                                        control={form.control}
+                                        name="password"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Senha Temporária</FormLabel>
+                                                <FormControl>
+                                                    <Input type="password" placeholder="Min. 6 caracteres" {...field} />
+                                                </FormControl>
+                                                <FormDescription className="text-xs">
+                                                    Usuário será obrigado a trocar no primeiro login.
+                                                </FormDescription>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </>
                             )}
-                        />
-                        <DialogFooter className="pt-4">
-                            <Button type="submit" disabled={isSubmitting}>
-                                {isSubmitting ? 'Salvando...' : 'Salvar Membro'}
-                            </Button>
-                        </DialogFooter>
+
+                            {!hasSystemAccess && (
+                                <Alert className="bg-muted">
+                                    <Info className="h-4 w-4" />
+                                    <AlertDescription className="text-xs">
+                                        Este funcionário será cadastrado apenas como registro. Ele não poderá fazer login no sistema.
+                                    </AlertDescription>
+                                </Alert>
+                            )}
+                        </div>
+
+                        <div className="px-6 pb-6 pt-4 border-t">
+                            <DialogFooter>
+                                <Button type="submit" disabled={isSubmitting}>
+                                    {isSubmitting ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Salvando...
+                                        </>
+                                    ) : (
+                                        'Salvar Membro'
+                                    )}
+                                </Button>
+                            </DialogFooter>
+                        </div>
                     </form>
                 </Form>
             </DialogContent>

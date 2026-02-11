@@ -1,11 +1,11 @@
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/lib/supabase/client';
 
 export async function getTeamMembers(organizationId: string) {
-    const supabase = createClientComponentClient();
+    const supabase = createClient();
 
     const { data, error } = await supabase
-        .from('users')
-        .select('id, full_name, email, role, avatar_url, is_active, phone')
+        .from('profiles')
+        .select('id, full_name, email, role, avatar_url, status, phone')
         .eq('organization_id', organizationId)
         .order('full_name');
 
@@ -14,15 +14,15 @@ export async function getTeamMembers(organizationId: string) {
 }
 
 export async function updateMemberRole(userId: string, role: string, hasSystemAccess: boolean) {
-    const supabase = createClientComponentClient();
+    const supabase = createClient();
 
     // Se 'hasSystemAccess' for falso, poderíamos marcar como inativo 
     // ou apenas mudar o role para algo com zero permissões.
     const { error } = await supabase
-        .from('users')
+        .from('profiles')
         .update({
             role,
-            is_active: hasSystemAccess
+            status: hasSystemAccess ? 'ACTIVE' : 'PENDING'
         })
         .eq('id', userId);
 

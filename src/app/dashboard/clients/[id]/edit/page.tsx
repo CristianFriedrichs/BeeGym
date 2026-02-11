@@ -12,13 +12,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ArrowLeft, CalendarIcon, Upload, Building } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { students } from '../page';
+import { initialClients as students } from '@/lib/mock-data';
 import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
 } from '@/components/ui/form';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -28,28 +28,28 @@ import { ptBR } from 'date-fns/locale';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const editStudentSchema = z.object({
-  name: z.string().min(3, 'O nome deve ter pelo menos 3 caracteres.'),
-  cpf: z.string().length(14, 'CPF inválido.'),
-  birthDate: z.date({
-    required_error: "A date of birth is required.",
-  }),
-  sex: z.string().optional(),
-  email: z.string().email('Por favor, insira um email válido.'),
-  phone: z.string().min(10, 'Telefone inválido.'),
-  address: z.object({
-    street: z.string().min(1, 'Rua é obrigatório'),
-    number: z.string().min(1, 'Número é obrigatório'),
-    complement: z.string().optional(),
-    neighborhood: z.string().min(1, 'Bairro é obrigatório'),
-    city: z.string().min(1, 'Cidade é obrigatório'),
-    state: z.string().min(1, 'Estado é obrigatório'),
-    zip: z.string().min(8, 'CEP inválido'),
-  }),
-  objetivo: z.string().optional(),
-  goals: z.string().optional(),
-  restrictions: z.string().optional(),
-  notes: z.string().optional(),
-  primaryUnitId: z.string().min(1, 'A unidade é obrigatória'),
+    name: z.string().min(3, 'O nome deve ter pelo menos 3 caracteres.'),
+    cpf: z.string().length(14, 'CPF inválido.'),
+    birthDate: z.date({
+        required_error: "A date of birth is required.",
+    }),
+    sex: z.string().optional(),
+    email: z.string().email('Por favor, insira um email válido.'),
+    phone: z.string().min(10, 'Telefone inválido.'),
+    address: z.object({
+        street: z.string().min(1, 'Rua é obrigatório'),
+        number: z.string().min(1, 'Número é obrigatório'),
+        complement: z.string().optional(),
+        neighborhood: z.string().min(1, 'Bairro é obrigatório'),
+        city: z.string().min(1, 'Cidade é obrigatório'),
+        state: z.string().min(1, 'Estado é obrigatório'),
+        zip: z.string().min(8, 'CEP inválido'),
+    }),
+    objetivo: z.string().optional(),
+    goals: z.string().optional(),
+    restrictions: z.string().optional(),
+    notes: z.string().optional(),
+    primaryUnitId: z.string().min(1, 'A unidade é obrigatória'),
 });
 
 type EditStudentFormValues = z.infer<typeof editStudentSchema>;
@@ -61,7 +61,7 @@ const EditClientPage = () => {
     const { toast } = useToast();
     const studentId = parseInt(params.id as string, 10);
     const student = students.find(s => s.id === studentId);
-    
+
     const [units, setUnits] = useState<any[]>([]);
 
     useEffect(() => {
@@ -101,7 +101,7 @@ const EditClientPage = () => {
         if (student) {
             const addressParts = student.address.split(',').map(s => s.trim());
             const [street, number, neighborhood, cityAndState] = addressParts;
-            const [city, state, zip] = cityAndState ? cityAndState.match(/(.+)\s([A-Z]{2})\s(\d{5}-\d{3})/)?.slice(1) || [cityAndState, '',''] : ['','',''];
+            const [city, state, zip] = cityAndState ? cityAndState.match(/(.+)\s([A-Z]{2})\s(\d{5}-\d{3})/)?.slice(1) || [cityAndState, '', ''] : ['', '', ''];
 
 
             form.reset({
@@ -147,12 +147,12 @@ const EditClientPage = () => {
     return (
         <FormProvider {...form}>
             <div className="space-y-8">
-                 <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4">
                     <Button variant="outline" size="icon" onClick={() => router.back()}>
                         <ArrowLeft className="h-4 w-4" />
                     </Button>
                     <Avatar className="h-12 w-12">
-                        <AvatarImage src={student.avatar} alt={student.name}/>
+                        <AvatarImage src={student.avatar} alt={student.name} />
                         <AvatarFallback>{student.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div>
@@ -162,19 +162,19 @@ const EditClientPage = () => {
                 </div>
 
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                     <Card>
+                    <Card>
                         <CardHeader>
                             <CardTitle>Dados Pessoais e Vínculo</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                             <div className="flex items-center gap-6">
+                            <div className="flex items-center gap-6">
                                 <Avatar className="h-20 w-20">
                                     <AvatarImage src={student.avatar} alt={student.name} />
                                     <AvatarFallback>{student.name?.substring(0, 2).toUpperCase() || 'AV'}</AvatarFallback>
                                 </Avatar>
                                 <div className="flex flex-col gap-2">
                                     <Button variant="outline" type="button">
-                                        <Upload className="mr-2 h-4 w-4"/>
+                                        <Upload className="mr-2 h-4 w-4" />
                                         Alterar Foto
                                     </Button>
                                     <p className="text-xs text-muted-foreground">JPG, GIF ou PNG. Máx 800KB.</p>
@@ -188,7 +188,7 @@ const EditClientPage = () => {
                                 )}
                             />
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                               <FormField
+                                <FormField
                                     control={form.control}
                                     name="cpf"
                                     render={({ field }) => (
@@ -202,32 +202,32 @@ const EditClientPage = () => {
                                         <FormItem className="flex flex-col"><FormLabel>Data de Nascimento *</FormLabel>
                                             <Popover>
                                                 <PopoverTrigger asChild>
-                                                <FormControl>
-                                                    <Button
-                                                    variant={"outline"}
-                                                    className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
-                                                    >
-                                                    {field.value ? format(new Date(field.value), "PPP", { locale: ptBR }) : <span>Escolha uma data</span>}
-                                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                                    </Button>
-                                                </FormControl>
+                                                    <FormControl>
+                                                        <Button
+                                                            variant={"outline"}
+                                                            className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
+                                                        >
+                                                            {field.value ? format(new Date(field.value), "PPP", { locale: ptBR }) : <span>Escolha uma data</span>}
+                                                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                        </Button>
+                                                    </FormControl>
                                                 </PopoverTrigger>
                                                 <PopoverContent className="w-auto p-0" align="start">
-                                                <Calendar
-                                                    mode="single"
-                                                    selected={field.value}
-                                                    onSelect={field.onChange}
-                                                    disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
-                                                    initialFocus
-                                                />
+                                                    <Calendar
+                                                        mode="single"
+                                                        selected={field.value}
+                                                        onSelect={field.onChange}
+                                                        disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                                                        initialFocus
+                                                    />
                                                 </PopoverContent>
                                             </Popover>
-                                        <FormMessage />
+                                            <FormMessage />
                                         </FormItem>
                                     )}
                                 />
                             </div>
-                             <FormField
+                            <FormField
                                 control={form.control}
                                 name="sex"
                                 render={({ field }) => (
@@ -235,7 +235,7 @@ const EditClientPage = () => {
                                         <FormLabel>Sexo</FormLabel>
                                         <Select onValueChange={field.onChange} value={field.value}>
                                             <FormControl>
-                                            <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                                                <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
                                                 <SelectItem value="Feminino">Feminino</SelectItem>
@@ -246,27 +246,27 @@ const EditClientPage = () => {
                                         <FormMessage />
                                     </FormItem>
                                 )}
-                                />
+                            />
                             <FormField
                                 control={form.control}
                                 name="primaryUnitId"
                                 render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Unidade Principal *</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value} >
-                                    <FormControl>
-                                        <SelectTrigger>
-                                        <SelectValue placeholder="Selecione a unidade principal" />
-                                        </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        {units.map(unit => (
-                                            <SelectItem key={unit.id} value={unit.id}>{unit.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
+                                    <FormItem>
+                                        <FormLabel>Unidade Principal *</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value} >
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Selecione a unidade principal" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {units.map(unit => (
+                                                    <SelectItem key={unit.id} value={unit.id}>{unit.name}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
                                 )}
                             />
                         </CardContent>
@@ -275,7 +275,7 @@ const EditClientPage = () => {
                     <Card>
                         <CardHeader><CardTitle>Contato</CardTitle></CardHeader>
                         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                           <FormField
+                            <FormField
                                 control={form.control}
                                 name="email"
                                 render={({ field }) => (
@@ -295,7 +295,7 @@ const EditClientPage = () => {
                     <Card>
                         <CardHeader><CardTitle>Endereço</CardTitle></CardHeader>
                         <CardContent className="space-y-4">
-                           <div className="grid grid-cols-1 sm:grid-cols-6 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-6 gap-4">
                                 <div className="sm:col-span-4">
                                     <FormField control={form.control} name="address.street" render={({ field }) => (<FormItem><FormLabel>Rua *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                                 </div>
@@ -315,7 +315,7 @@ const EditClientPage = () => {
                         </CardContent>
                     </Card>
 
-                     <Card>
+                    <Card>
                         <CardHeader><CardTitle>Objetivos e Condições</CardTitle></CardHeader>
                         <CardContent className="space-y-4">
                             <FormField control={form.control} name="objetivo" render={({ field }) => (<FormItem><FormLabel>Objetivo Principal</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -337,4 +337,3 @@ const EditClientPage = () => {
 
 export default EditClientPage;
 
-    

@@ -15,8 +15,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { LiveClassCard } from '@/components/dashboard/live-class-card';
 import { TooltipProvider } from '@/components/ui/tooltip';
+// DOMPurify removed
 import { getKPIs, getUpcomingClasses, getAlerts, KPI, ScheduleItem, Alert } from '@/services/supabase/dashboard';
-import DOMPurify from 'dompurify';
 
 // Helper to map icon name to component
 const getIconComponent = (name: string) => {
@@ -353,7 +353,7 @@ export default function Dashboard() {
                     </div>
                     <div>
                       <h4 className={`text-sm font-bold text-foreground`}>{alert.title}</h4>
-                      <p className={`text-xs text-muted-foreground mt-1 mb-2`} dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(alert.description) }}></p>
+                      <p className={`text-xs text-muted-foreground mt-1 mb-2`}>{alert.description}</p>
                       <Link href={alert.href || '#'}>
                         <button className={`text-xs font-semibold hover:underline ${alert.color === 'destructive' ? 'text-destructive' : alert.color === 'yellow' ? 'text-orange-600' : 'text-blue-600'} uppercase tracking-wide`}>{alert.action}</button>
                       </Link>

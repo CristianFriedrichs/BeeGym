@@ -32,19 +32,10 @@ export default function RegisterPage() {
             let phone = value.replace(/\D/g, '')
             if (phone.length > 11) phone = phone.slice(0, 11)
 
-            if (phone.length > 2) {
-                const ddd = phone.slice(0, 2)
-                const part1 = phone.slice(2, 7)
-                const part2 = phone.slice(7)
+            // Format: (99) 99999-9999
+            phone = phone.replace(/^(\d{2})(\d)/g, '($1) $2')
+            phone = phone.replace(/(\d)(\d{4})$/, '$1-$2')
 
-                if (phone.length > 7) {
-                    phone = `(${ddd}) ${part1}-${part2}`
-                } else if (phone.length > 2) {
-                    phone = `(${ddd}) ${part1}`
-                } else {
-                    phone = `(${ddd})`
-                }
-            }
             setFormData(prev => ({ ...prev, [name]: phone }))
             return
         }
@@ -105,6 +96,10 @@ export default function RegisterPage() {
                                 provider: 'google',
                                 options: {
                                     redirectTo: `${location.origin}/auth/callback?next=/onboarding`,
+                                    queryParams: {
+                                        access_type: 'offline',
+                                        prompt: 'consent',
+                                    },
                                 },
                             })
                         }}>

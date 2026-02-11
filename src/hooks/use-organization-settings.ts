@@ -39,9 +39,9 @@ export function useOrganizationSettings() {
                     return;
                 }
 
-                // Get user's organization_id
+                // Get user's organization_id from profiles
                 const { data: userData } = await supabase
-                    .from('users')
+                    .from('profiles')
                     .select('organization_id')
                     .eq('id', user.id)
                     .single();
@@ -55,18 +55,18 @@ export function useOrganizationSettings() {
                 // Fetch organization settings
                 const { data: orgData, error: orgError } = await supabase
                     .from('organizations')
-                    .select('opening_hours, allow_concurrent_bookings, max_capacity_per_slot, default_session_duration')
-                    .eq('id', userData.organization_id)
+                    .select('opening_hours')
+                    .eq('id', userData.organization_id as string)
                     .single();
 
                 if (orgError) throw orgError;
 
                 if (orgData) {
                     setSettings({
-                        opening_hours: orgData.opening_hours as OpeningHours | null,
-                        allow_concurrent_bookings: orgData.allow_concurrent_bookings ?? false,
-                        max_capacity_per_slot: orgData.max_capacity_per_slot ?? 1,
-                        default_session_duration: orgData.default_session_duration ?? 60,
+                        opening_hours: orgData.opening_hours as any as OpeningHours | null,
+                        allow_concurrent_bookings: false,
+                        max_capacity_per_slot: 1,
+                        default_session_duration: 60,
                     });
                 }
             } catch (err: any) {

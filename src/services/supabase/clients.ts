@@ -21,15 +21,8 @@ export async function getClients(unitId?: string, search?: string): Promise<Clie
         .select(`
             id,
             full_name,
-            email,
-            avatar_url,
             status,
-            objective,
-            unit_id,
-            student_plan_assignments (
-                plan_name,
-                status
-            )
+            organization_id
         `);
 
     if (unitId) {
@@ -58,20 +51,14 @@ export async function getClients(unitId?: string, search?: string): Promise<Clie
 }
 
 function mapStudentToClient(student: any): Client {
-    // student_plan_assignments is an array due to 1:N relation
-    const assignments = student.student_plan_assignments;
-    const activePlan = Array.isArray(assignments)
-        ? assignments.find((p: any) => p.status === 'ACTIVE')
-        : null;
-
     return {
         id: student.id,
         name: student.full_name,
-        email: student.email || '',
-        objetivo: student.objective || 'Não informado',
-        plan: activePlan ? activePlan.plan_name : (student.plans?.name || 'Sem Plano'),
+        email: '',
+        objetivo: 'Não informado',
+        plan: 'Sem Plano',
         status: student.status === 'ACTIVE' ? 'active' : student.status === 'INACTIVE' ? 'inactive' : 'overdue',
-        avatar: student.avatar_url,
-        primaryUnitId: student.unit_id
+        avatar: null,
+        primaryUnitId: ''
     };
 }

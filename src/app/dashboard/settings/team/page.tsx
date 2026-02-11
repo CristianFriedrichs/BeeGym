@@ -12,29 +12,36 @@ export default async function TeamPage() {
         redirect('/login');
     }
 
-    // Get current user's organization
-    const { data: userData } = await supabase
-        .from('users')
-        .select('organization_id')
+    // BUSCA NA FONTE DE VERDADE
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('organization_id, role')
         .eq('id', user.id)
         .single();
 
-    if (!userData?.organization_id) {
+    if (!profile?.organization_id) {
         // Handle case where user has no organization (e.g., redirect or show error)
-        return <div>Usuário sem organização vinculada.</div>;
+        return <div className="p-8 text-center text-muted-foreground">Erro: Usuário sem organização vinculada no banco de dados.</div>;
     }
 
-    // Fetch team members
+    // Fetch team members from profiles
     const { data: teamMembers } = await supabase
-        .from('users')
+        .from('profiles')
         .select('*')
-        .eq('organization_id', userData.organization_id)
-        .order('name');
+        .eq('organization_id', profile.organization_id)
+        .order('full_name');
+
+    // Mapeia para o formato esperado pelo componente Legado/Existente
+    const mappedMembers = (teamMembers || []).map(m => ({
+        ...m,
+        name: m.full_name,
+        active: m.status === 'ACTIVE'
+    }));
 
     return (
         <TeamList
-            initialUsers={teamMembers || []}
-            currentOrgId={userData.organization_id}
+            initialUsers={mappedMembers}
+            currentOrgId={profile.organization_id}
         />
     );
 }

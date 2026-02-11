@@ -58,7 +58,7 @@ interface Student {
 interface Exercise {
     id: string;
     name: string;
-    category: string;
+    muscle_group: string | null;
     organization_id: string | null;
 }
 
@@ -98,7 +98,7 @@ export function SessionManagerModal({
     const [selectedExerciseId, setSelectedExerciseId] = useState<string>('');
     const [showCreateExercise, setShowCreateExercise] = useState(false);
     const [newExerciseName, setNewExerciseName] = useState('');
-    const [newExerciseCategory, setNewExerciseCategory] = useState('');
+    const [newExerciseMuscleGroup, setNewExerciseMuscleGroup] = useState('');
 
     // Reschedule state
     const [showRescheduleDialog, setShowRescheduleDialog] = useState(false);
@@ -122,13 +122,18 @@ export function SessionManagerModal({
         try {
             const { data, error } = await supabase
                 .from('students')
-                .select('id, name, avatar_url')
+                .select('id, full_name')
                 .in('id', studentIds);
 
             if (error) throw error;
 
             if (data) {
-                setStudents(data.map(s => ({ ...s, present: true })));
+                setStudents((data as any[]).map(s => ({
+                    id: s.id,
+                    name: s.full_name,
+                    avatar_url: null,
+                    present: true
+                })));
             }
         } catch (error) {
             console.error('Error fetching students:', error);
@@ -177,8 +182,6 @@ export function SessionManagerModal({
                     exercise_id,
                     sets,
                     reps,
-                    weight_kg,
-                    rest_seconds,
                     notes,
                     exercises (
                         name
@@ -189,14 +192,14 @@ export function SessionManagerModal({
             if (error) throw error;
 
             if (data && data.length > 0) {
-                const logs: WorkoutExercise[] = data.map(log => ({
+                const logs: WorkoutExercise[] = (data as any[]).map(log => ({
                     id: log.id,
                     exercise_id: log.exercise_id,
                     exercise_name: (log.exercises as any)?.name || 'Exercício',
                     sets: log.sets || 0,
                     reps: log.reps?.toString() || '',
-                    weight_kg: log.weight_kg || 0,
-                    rest_seconds: log.rest_seconds || 0,
+                    weight_kg: 0,
+                    rest_seconds: 0,
                     notes: log.notes || ''
                 }));
                 setWorkoutExercises(logs);
@@ -207,10 +210,10 @@ export function SessionManagerModal({
     }
 
     async function handleCreateExercise() {
-        if (!newExerciseName.trim() || !newExerciseCategory.trim()) {
+        if (!newExerciseName.trim() || !newExerciseMuscleGroup.trim()) {
             toast({
                 title: 'Campos obrigatórios',
-                description: 'Preencha o nome e a categoria do exercício.',
+                description: 'Preencha o nome e o grupo muscular do exercício.',
                 variant: 'destructive',
             });
             return;
@@ -223,7 +226,7 @@ export function SessionManagerModal({
                 .from('exercises')
                 .insert({
                     name: newExerciseName,
-                    category: newExerciseCategory,
+                    muscle_group: newExerciseMuscleGroup,
                     organization_id: orgId
                 })
                 .select()
@@ -235,7 +238,7 @@ export function SessionManagerModal({
                 setExercises(prev => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)));
                 setSelectedExerciseId(data.id);
                 setNewExerciseName('');
-                setNewExerciseCategory('');
+                setNewExerciseMuscleGroup('');
                 setShowCreateExercise(false);
 
                 toast({
@@ -326,8 +329,6 @@ export function SessionManagerModal({
                     exercise_id: exercise.exercise_id,
                     sets: exercise.sets,
                     reps: exercise.reps,
-                    weight_kg: exercise.weight_kg,
-                    rest_seconds: exercise.rest_seconds,
                     notes: exercise.notes
                 }))
             );
@@ -781,7 +782,7 @@ export function SessionManagerModal({
                                             onClick={() => {
                                                 setShowCreateExercise(false);
                                                 setNewExerciseName('');
-                                                setNewExerciseCategory('');
+                                                setNewExerciseMuscleGroup('');
                                             }}
                                         >
                                             <X className="h-4 w-4" />
@@ -795,9 +796,9 @@ export function SessionManagerModal({
                                             className="min-h-[44px]"
                                         />
                                         <Input
-                                            placeholder="Categoria (ex: Peito, Costas, Pernas)"
-                                            value={newExerciseCategory}
-                                            onChange={(e) => setNewExerciseCategory(e.target.value)}
+                                            placeholder="Grupo muscular (ex: Peito, Costas, Pernas)"
+                                            value={newExerciseMuscleGroup}
+                                            onChange={(e) => setNewExerciseMuscleGroup(e.target.value)}
                                             className="min-h-[44px]"
                                         />
                                     </div>

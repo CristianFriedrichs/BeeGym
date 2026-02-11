@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -8,99 +9,122 @@ import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Save } from 'lucide-react';
+import { Loader2, Save, Upload, Globe, Instagram, Building2, Clock } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
-// --- Zod Schema ---
+type DaySchedule = { start: string; end: string; active: boolean };
+type ScheduleConfig = Record<
+    'sunday' | 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'holidays',
+    DaySchedule
+>;
+
+const dayScheduleSchema = z.object({
+    active: z.boolean(),
+    start: z.string(),
+    end: z.string(),
+});
+
+const scheduleSchema = z.object({
+    sunday: dayScheduleSchema,
+    monday: dayScheduleSchema,
+    tuesday: dayScheduleSchema,
+    wednesday: dayScheduleSchema,
+    thursday: dayScheduleSchema,
+    friday: dayScheduleSchema,
+    saturday: dayScheduleSchema,
+    holidays: dayScheduleSchema,
+});
+
 const settingsSchema = z.object({
     name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
-    contact_email: z.string().email('E-mail inválido').optional().or(z.literal('')),
-    document: z.string().optional(),
-    has_physical_location: z.boolean().default(true),
-    address_zip: z.string().optional(),
-    address_line1: z.string().optional(),
-    address_number: z.string().optional(),
-    address_neighborhood: z.string().optional(),
-    address_city: z.string().optional(),
-    address_state: z.string().optional(),
-    opening_hours: z.record(z.object({
-        open: z.boolean(),
-        start: z.string(),
-        end: z.string()
-    })).optional(),
-    // Scheduling configuration
-    allow_concurrent_bookings: z.boolean().default(false),
-    max_capacity_per_slot: z.number().min(1).max(50).default(1),
-    default_session_duration: z.number().min(15).max(240).default(60),
+    description: z.string().optional(),
+    website: z.string()
+        .optional()
+        .or(z.literal(''))
+        .transform((url) => {
+            if (!url) return '';
+            const cleanUrl = url.trim();
+            if (!cleanUrl) return '';
+            // Auto-add https:// if no protocol present
+            if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
+                return `https://${cleanUrl}`;
+            }
+            return cleanUrl;
+        })
+        .pipe(z.string().url('URL inválida (ex: www.seusite.com)').optional().or(z.literal(''))),
+    instagram: z.string()
+        .optional()
+        .transform((handle) => {
+            if (!handle) return '';
+            const cleanHandle = handle.trim().replace(/^@/, ''); // Remove @ if present
+            if (!cleanHandle) return '';
+            // Add @ prefix
+            return `@${cleanHandle}`;
+        }),
+    schedule: scheduleSchema,
 });
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
 
-const DAYS_OF_WEEK = [
-    { key: 'monday', label: 'Segunda-feira' },
-    { key: 'tuesday', label: 'Terça-feira' },
-    { key: 'wednesday', label: 'Quarta-feira' },
-    { key: 'thursday', label: 'Quinta-feira' },
-    { key: 'friday', label: 'Sexta-feira' },
-    { key: 'saturday', label: 'Sábado' },
-    { key: 'sunday', label: 'Domingo' },
+const DAY_LABELS: Record<keyof ScheduleConfig, string> = {
+    monday: 'Segunda-feira',
+    tuesday: 'Terça-feira',
+    wednesday: 'Quarta-feira',
+    thursday: 'Quinta-feira',
+    friday: 'Sexta-feira',
+    saturday: 'Sábado',
+    sunday: 'Domingo',
+    holidays: 'Feriados',
+};
+
+const DAY_ORDER: (keyof ScheduleConfig)[] = [
+    'monday',
+    'tuesday',
+    'wednesday',
+    'thursday',
+    'friday',
+    'saturday',
+    'sunday',
+    'holidays',
 ];
 
-const DEFAULT_HOURS = DAYS_OF_WEEK.reduce((acc, day) => {
-    acc[day.key] = { open: true, start: '08:00', end: '18:00' };
-    return acc;
-}, {} as any);
-
 export default function GeneralSettingsPage() {
+    const router = useRouter();
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isUploadingLogo, setIsUploadingLogo] = useState(false);
     const [orgId, setOrgId] = useState<string | null>(null);
-    const [businessType, setBusinessType] = useState<string>('personal');
     const [logoUrl, setLogoUrl] = useState<string>('');
+    const [organizationName, setOrganizationName] = useState<string>('');
+
     const { toast } = useToast();
     const supabase = createClient();
 
     const form = useForm<SettingsFormValues>({
         resolver: zodResolver(settingsSchema),
         defaultValues: {
-            has_physical_location: true,
-            opening_hours: DEFAULT_HOURS,
-            allow_concurrent_bookings: false,
-            max_capacity_per_slot: 1,
-            default_session_duration: 60,
+            name: '',
+            description: '',
+            website: '',
+            instagram: '',
+            schedule: {
+                monday: { active: true, start: '06:00', end: '22:00' },
+                tuesday: { active: true, start: '06:00', end: '22:00' },
+                wednesday: { active: true, start: '06:00', end: '22:00' },
+                thursday: { active: true, start: '06:00', end: '22:00' },
+                friday: { active: true, start: '06:00', end: '22:00' },
+                saturday: { active: true, start: '08:00', end: '14:00' },
+                sunday: { active: false, start: '09:00', end: '13:00' },
+                holidays: { active: false, start: '09:00', end: '13:00' },
+            },
         }
     });
 
     const { register, handleSubmit, setValue, watch, formState: { errors } } = form;
-    const hasLocation = watch('has_physical_location');
-    const allowConcurrent = watch('allow_concurrent_bookings');
-    const openingHours = watch('opening_hours') || DEFAULT_HOURS;
-
-    const formatDocument = (value: string) => {
-        value = value.replace(/\D/g, '');
-        if (value.length <= 11) {
-            return value.replace(/(\d{3})(\d)/, '$1.$2')
-                .replace(/(\d{3})(\d)/, '$1.$2')
-                .replace(/(\d{3})(\d{1,2})/, '$1-$2')
-                .replace(/(-\d{2})\d+?$/, '$1');
-        } else {
-            return value.replace(/(\d{2})(\d)/, '$1.$2')
-                .replace(/(\d{3})(\d)/, '$1.$2')
-                .replace(/(\d{3})(\d)/, '$1/$2')
-                .replace(/(\d{4})(\d)/, '$1-$2')
-                .replace(/(-\d{2})\d+?$/, '$1');
-        }
-    };
-
-    const handleDocumentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const formatted = formatDocument(e.target.value);
-        setValue('document', formatted);
-    };
 
     useEffect(() => {
         async function fetchSettings() {
@@ -108,71 +132,73 @@ export default function GeneralSettingsPage() {
                 const { data: { user } } = await supabase.auth.getUser();
                 if (!user) return;
 
-                const { data: userData } = await supabase
-                    .from('users')
+                const { data: profile } = await supabase
+                    .from('profiles')
                     .select('organization_id')
                     .eq('id', user.id)
                     .single();
 
-                if (!userData) return;
-                setOrgId(userData.organization_id);
+                if (!profile?.organization_id) return;
+
+                setOrgId(profile.organization_id);
 
                 const { data: org } = await supabase
                     .from('organizations')
                     .select('*')
-                    .eq('id', userData.organization_id)
-                    .single();
+                    .eq('id', profile.organization_id)
+                    .single() as { data: any, error: any };
 
                 if (org) {
-                    setBusinessType(org.business_type || 'personal');
+                    setValue('name', org.name || '');
+                    setValue('description', org.description || '');
+                    setValue('website', org.website || '');
+                    setValue('instagram', org.instagram || '');
+
+                    setOrganizationName(org.name || '');
                     setLogoUrl(org.logo_url || '');
-                    form.reset({
-                        name: org.name || '',
-                        contact_email: org.contact_email || user.email || '',
-                        document: org.document || '',
-                        has_physical_location: org.has_physical_location ?? true,
-                        address_zip: org.address_zip || '',
-                        address_line1: org.address_line1 || '',
-                        address_number: org.address_number || '',
-                        address_neighborhood: org.address_neighborhood || '',
-                        address_city: org.address_city || '',
-                        address_state: org.address_state || '',
-                        opening_hours: (org.opening_hours as any) || DEFAULT_HOURS,
-                        allow_concurrent_bookings: org.allow_concurrent_bookings ?? false,
-                        max_capacity_per_slot: org.max_capacity_per_slot || 1,
-                        default_session_duration: org.default_session_duration || 60,
-                    });
+
+                    // Parse schedule JSON
+                    if (org.schedule) {
+                        const schedule = typeof org.schedule === 'string'
+                            ? JSON.parse(org.schedule)
+                            : org.schedule;
+
+                        // Handle migration from old format
+                        if (schedule.weekdays) {
+                            // Old format - convert to new
+                            const newSchedule: ScheduleConfig = {
+                                monday: schedule.weekdays,
+                                tuesday: schedule.weekdays,
+                                wednesday: schedule.weekdays,
+                                thursday: schedule.weekdays,
+                                friday: schedule.weekdays,
+                                saturday: schedule.saturday || { active: true, start: '08:00', end: '14:00' },
+                                sunday: schedule.sunday || { active: false, start: '09:00', end: '13:00' },
+                                holidays: { active: false, start: '09:00', end: '13:00' },
+                            };
+                            setValue('schedule', newSchedule);
+                        } else {
+                            setValue('schedule', schedule);
+                        }
+                    }
                 }
-            } catch (err) {
-                console.error("Error loading settings", err);
-            } finally {
+
+                setIsLoading(false);
+            } catch (error) {
+                console.error('Error fetching settings:', error);
                 setIsLoading(false);
             }
         }
+
         fetchSettings();
-    }, []);
+    }, [supabase, setValue]);
 
-    const handleZipBlur = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const rawZip = e.target.value.replace(/\D/g, '');
-        if (rawZip.length === 8) {
-            try {
-                const res = await fetch(`https://viacep.com.br/ws/${rawZip}/json/`);
-                const data = await res.json();
-                if (!data.erro) {
-                    setValue('address_line1', data.logradouro);
-                    setValue('address_neighborhood', data.bairro);
-                    setValue('address_city', data.localidade);
-                    setValue('address_state', data.uf);
-                }
-            } catch (error) { }
-        }
-    };
-
-    const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
+    async function handleLogoUpload(event: React.ChangeEvent<HTMLInputElement>) {
+        const file = event.target.files?.[0];
         if (!file || !orgId) return;
 
         setIsUploadingLogo(true);
+
         try {
             const fileExt = file.name.split('.').pop();
             const fileName = `${orgId}-${Date.now()}.${fileExt}`;
@@ -188,341 +214,262 @@ export default function GeneralSettingsPage() {
                 .from('logos')
                 .getPublicUrl(filePath);
 
-            const { error: updateError } = await supabase
+            const { error: dbError } = await supabase
                 .from('organizations')
                 .update({ logo_url: publicUrl })
                 .eq('id', orgId);
 
-            if (updateError) throw updateError;
+            if (dbError) throw dbError;
 
             setLogoUrl(publicUrl);
             toast({
-                title: 'Logo Atualizado!',
-                description: 'Sua logomarca foi salva com sucesso.',
-                className: 'bg-[#ff8c00] text-white border-none',
+                title: 'Logo atualizada',
+                description: 'A logo do negócio foi atualizada com sucesso.',
             });
+            router.refresh();
         } catch (error: any) {
+            console.error('Error uploading logo:', error);
             toast({
-                variant: 'destructive',
                 title: 'Erro ao fazer upload',
-                description: error.message || 'Tente novamente mais tarde.',
+                description: error.message || 'Ocorreu um erro ao enviar a logo.',
+                variant: 'destructive',
             });
         } finally {
             setIsUploadingLogo(false);
         }
-    };
+    }
 
-    const onSubmit = async (data: SettingsFormValues) => {
+    async function onSubmit(values: SettingsFormValues) {
         if (!orgId) return;
-        setIsSaving(true);
-        try {
-            const updates = {
-                name: data.name,
-                contact_email: data.contact_email,
-                document: data.document,
-                has_physical_location: data.has_physical_location,
-                address_line1: data.address_line1,
-                address_number: data.address_number,
-                address_neighborhood: data.address_neighborhood,
-                address_city: data.address_city,
-                address_state: data.address_state,
-                address_zip: data.address_zip,
-                opening_hours: data.opening_hours,
-                allow_concurrent_bookings: data.allow_concurrent_bookings,
-                max_capacity_per_slot: data.max_capacity_per_slot,
-                default_session_duration: data.default_session_duration,
-                updated_at: new Date().toISOString()
-            };
 
+        setIsSaving(true);
+
+        try {
             const { error } = await supabase
                 .from('organizations')
-                .update(updates)
+                .update({
+                    name: values.name,
+                    description: values.description,
+                    website: values.website,
+                    instagram: values.instagram,
+                    schedule: values.schedule,
+                })
                 .eq('id', orgId);
 
             if (error) throw error;
 
+            setOrganizationName(values.name);
+
             toast({
-                title: "Configurações Salvas",
-                description: "As informações foram atualizadas com sucesso.",
-                className: "bg-[#ff8c00] text-white border-none"
+                title: 'Configurações salvas',
+                description: 'As configurações do negócio foram atualizadas com sucesso.',
             });
-
-            const { data: units } = await supabase.from('units').select('*').eq('organization_id', orgId);
-            if (units && units.length === 1) {
-                await supabase.from('units').update({ name: data.name }).eq('id', units[0].id);
-                units[0].name = data.name;
-                localStorage.setItem('units_data', JSON.stringify(units));
-            }
-
-            // Dispatch event to update header organization name
-            window.dispatchEvent(new CustomEvent('organizationUpdated'));
+            router.refresh();
         } catch (error: any) {
+            console.error('Error saving settings:', error);
             toast({
-                variant: "destructive",
-                title: "Erro ao salvar",
-                description: error.message || "Tente novamente mais tarde."
+                title: 'Erro ao salvar',
+                description: error.message || 'Ocorreu um erro ao salvar as configurações.',
+                variant: 'destructive',
             });
         } finally {
             setIsSaving(false);
         }
-    };
-
-    if (isLoading) {
-        return <div className="flex h-96 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
     }
 
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center p-8">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+        );
+    }
+
+    const schedule = watch('schedule');
+
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h3 className="text-xl font-bold text-foreground">Configurações Gerais</h3>
-                    <p className="text-sm text-muted-foreground">Dados do negócio, endereço e horários.</p>
-                </div>
-                <Button onClick={handleSubmit(onSubmit)} disabled={isSaving} className="bg-[#ff8c00] hover:bg-[#e67e00] text-white">
-                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                    Salvar
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            {/* Card 1: Business Identity */}
+            <Card>
+                <CardHeader>
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                            <Building2 className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                            <CardTitle>Identidade Visual & Sobre</CardTitle>
+                            <CardDescription>Configure a identidade e informações do seu negócio.</CardDescription>
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    {/* Logo Upload */}
+                    <div className="space-y-2">
+                        <Label>Logo do Negócio</Label>
+                        <div className="flex items-center gap-4">
+                            <Avatar className="h-20 w-20 rounded-lg">
+                                <AvatarImage src={logoUrl} className="object-cover" />
+                                <AvatarFallback className="rounded-lg text-lg bg-primary/10">
+                                    {organizationName?.slice(0, 2).toUpperCase() || 'BG'}
+                                </AvatarFallback>
+                            </Avatar>
+                            <div>
+                                <input
+                                    id="logo-upload"
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={handleLogoUpload}
+                                    disabled={isUploadingLogo}
+                                />
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => document.getElementById('logo-upload')?.click()}
+                                    disabled={isUploadingLogo}
+                                >
+                                    {isUploadingLogo ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Enviando...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Upload className="mr-2 h-4 w-4" />
+                                            Alterar Logo
+                                        </>
+                                    )}
+                                </Button>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    Formatos aceitos: JPG, PNG. Tamanho recomendado: 200x200px.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Business Name */}
+                    <div className="space-y-2">
+                        <Label htmlFor="name">Nome do Negócio</Label>
+                        <Input
+                            id="name"
+                            {...register('name')}
+                            placeholder="Ex: Academia FitLife"
+                        />
+                        {errors.name && (
+                            <p className="text-sm text-destructive">{errors.name.message}</p>
+                        )}
+                    </div>
+
+                    {/* Description */}
+                    <div className="space-y-2">
+                        <Label htmlFor="description">Descrição</Label>
+                        <Textarea
+                            id="description"
+                            {...register('description')}
+                            placeholder="Sobre a academia..."
+                            rows={4}
+                        />
+                        {errors.description && (
+                            <p className="text-sm text-destructive">{errors.description.message}</p>
+                        )}
+                    </div>
+
+                    {/* Website & Instagram */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="website">Website</Label>
+                            <div className="relative">
+                                <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    id="website"
+                                    {...register('website')}
+                                    placeholder="www.suaacademia.com.br"
+                                    className="pl-10"
+                                />
+                            </div>
+                            {errors.website && (
+                                <p className="text-sm text-destructive">{errors.website.message}</p>
+                            )}
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="instagram">Instagram</Label>
+                            <div className="relative">
+                                <Instagram className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    id="instagram"
+                                    {...register('instagram')}
+                                    placeholder="@seu.perfil"
+                                    className="pl-10"
+                                />
+                            </div>
+                            {errors.instagram && (
+                                <p className="text-sm text-destructive">{errors.instagram.message}</p>
+                            )}
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* Card 2: Operating Schedule */}
+            <Card>
+                <CardHeader>
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                            <Clock className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                            <CardTitle>Horário de Funcionamento</CardTitle>
+                            <CardDescription>Defina os horários de abertura e fechamento para cada dia.</CardDescription>
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                    {DAY_ORDER.map((day) => (
+                        <div key={day} className="flex items-center gap-4 p-4 border rounded-lg">
+                            <div className="flex items-center gap-2 min-w-[140px]">
+                                <Switch
+                                    checked={schedule[day].active}
+                                    onCheckedChange={(checked) => setValue(`schedule.${day}.active`, checked)}
+                                />
+                                <Label className="font-medium">{DAY_LABELS[day]}</Label>
+                            </div>
+                            <div className="flex items-center gap-2 flex-1">
+                                <Input
+                                    type="time"
+                                    {...register(`schedule.${day}.start`)}
+                                    disabled={!schedule[day].active}
+                                    className="w-32"
+                                />
+                                <span className="text-muted-foreground">até</span>
+                                <Input
+                                    type="time"
+                                    {...register(`schedule.${day}.end`)}
+                                    disabled={!schedule[day].active}
+                                    className="w-32"
+                                />
+                            </div>
+                        </div>
+                    ))}
+                </CardContent>
+            </Card>
+
+            {/* Submit Button */}
+            <div className="flex justify-end">
+                <Button type="submit" disabled={isSaving}>
+                    {isSaving ? (
+                        <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Salvando...
+                        </>
+                    ) : (
+                        <>
+                            <Save className="mr-2 h-4 w-4" />
+                            Salvar Alterações
+                        </>
+                    )}
                 </Button>
             </div>
-
-            <Tabs defaultValue="general" className="w-full">
-                <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
-                    <TabsTrigger value="general">Geral</TabsTrigger>
-                    <TabsTrigger value="address">Endereço</TabsTrigger>
-                    <TabsTrigger value="hours">Horários</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="general">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Dados do Negócio</CardTitle>
-                            <CardDescription>Informações básicas sobre sua operação.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="name">{businessType === 'personal' ? 'Nome Profissional' : 'Razão Social / Nome Fantasia'}</Label>
-                                <Input id="name" {...register('name')} placeholder="Ex: BeeGym Academy" />
-                                {errors.name && <p className="text-xs text-red-500">{errors.name.message}</p>}
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="contact_email">E-mail de Contato</Label>
-                                    <Input id="contact_email" {...register('contact_email')} placeholder="contato@empresa.com" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="document">CPF / CNPJ</Label>
-                                    <Input
-                                        id="document"
-                                        {...register('document')}
-                                        onChange={(e) => {
-                                            handleDocumentChange(e);
-                                            register('document').onChange(e);
-                                        }}
-                                        placeholder="000.000.000-00"
-                                        maxLength={18}
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Logo Upload Section */}
-                            <div className="space-y-2 pt-4 border-t">
-                                <Label>Logomarca</Label>
-                                <div className="flex items-center gap-4">
-                                    {logoUrl && (
-                                        <div className="h-20 w-20 rounded-lg border-2 border-border overflow-hidden bg-muted flex items-center justify-center">
-                                            <img src={logoUrl} alt="Logo" className="h-full w-full object-contain" />
-                                        </div>
-                                    )}
-                                    <div className="flex-1">
-                                        <Input
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={handleLogoUpload}
-                                            disabled={isUploadingLogo}
-                                            className="cursor-pointer"
-                                        />
-                                        <p className="text-xs text-muted-foreground mt-1">
-                                            {isUploadingLogo ? 'Fazendo upload...' : 'PNG, JPG ou SVG (máx. 2MB)'}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-
-                <TabsContent value="address">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Localização</CardTitle>
-                            <CardDescription>Onde seus alunos podem te encontrar.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="flex items-center space-x-2 pb-4">
-                                <Switch
-                                    id="has_physical_location"
-                                    checked={!hasLocation}
-                                    onCheckedChange={(checked) => setValue('has_physical_location', !checked)}
-                                />
-                                <Label htmlFor="has_physical_location">Atendimento em domicílio / Sem local fixo</Label>
-                            </div>
-                            <div className={!hasLocation ? 'opacity-50 pointer-events-none space-y-4' : 'space-y-4'}>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="address_zip">CEP</Label>
-                                        <Input id="address_zip" {...register('address_zip')} onBlur={handleZipBlur} placeholder="00000-000" />
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-3 gap-4">
-                                    <div className="col-span-2 space-y-2">
-                                        <Label htmlFor="address_line1">Logradouro</Label>
-                                        <Input id="address_line1" {...register('address_line1')} placeholder="Rua, Avenida..." />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="address_number">Número</Label>
-                                        <Input id="address_number" {...register('address_number')} placeholder="123" />
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="address_neighborhood">Bairro</Label>
-                                        <Input id="address_neighborhood" {...register('address_neighborhood')} />
-                                    </div>
-                                    <div className="grid grid-cols-3 gap-2">
-                                        <div className="col-span-2 space-y-2">
-                                            <Label htmlFor="address_city">Cidade</Label>
-                                            <Input id="address_city" {...register('address_city')} />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="address_state">UF</Label>
-                                            <Input id="address_state" {...register('address_state')} />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-
-                <TabsContent value="hours">
-                    <div className="space-y-6">
-                        {/* Opening Hours Card */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Horários de Atendimento</CardTitle>
-                                <CardDescription>Defina quando você costuma atender seus alunos.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                                {DAYS_OF_WEEK.map((day) => (
-                                    <div key={day.key} className="flex items-center justify-between py-3 border-b last:border-0">
-                                        <div className="flex items-center space-x-4 w-48">
-                                            <Switch
-                                                checked={openingHours[day.key]?.open}
-                                                onCheckedChange={(checked) => {
-                                                    const newHours = { ...openingHours };
-                                                    if (!newHours[day.key]) newHours[day.key] = { open: checked, start: '08:00', end: '18:00' };
-                                                    else newHours[day.key].open = checked;
-                                                    setValue('opening_hours', newHours);
-                                                }}
-                                            />
-                                            <Label className="font-medium text-base cursor-pointer">
-                                                {day.label}
-                                            </Label>
-                                        </div>
-                                        <div className={`flex items-center gap-3 ${!openingHours[day.key]?.open ? 'opacity-30 pointer-events-none' : ''}`}>
-                                            <Input
-                                                type="time"
-                                                className="w-28"
-                                                value={openingHours[day.key]?.start || '08:00'}
-                                                onChange={(e) => {
-                                                    const newHours = { ...openingHours };
-                                                    newHours[day.key].start = e.target.value;
-                                                    setValue('opening_hours', newHours);
-                                                }}
-                                            />
-                                            <span className="text-sm text-muted-foreground font-medium">até</span>
-                                            <Input
-                                                type="time"
-                                                className="w-28"
-                                                value={openingHours[day.key]?.end || '18:00'}
-                                                onChange={(e) => {
-                                                    const newHours = { ...openingHours };
-                                                    newHours[day.key].end = e.target.value;
-                                                    setValue('opening_hours', newHours);
-                                                }}
-                                            />
-                                        </div>
-                                    </div>
-                                ))}
-                            </CardContent>
-                        </Card>
-
-                        {/* Scheduling Rules Card */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Regras de Agendamento</CardTitle>
-                                <CardDescription>Configure como os treinos podem ser agendados.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-6">
-                                {/* Concurrent Bookings Toggle */}
-                                <div className="flex items-start justify-between space-x-4 pb-4 border-b">
-                                    <div className="flex-1">
-                                        <Label htmlFor="allow_concurrent" className="text-base font-medium">
-                                            Permitir mais de um aluno por horário?
-                                        </Label>
-                                        <p className="text-sm text-muted-foreground mt-1">
-                                            Se ativado, você poderá agendar múltiplos alunos no mesmo horário (aulas em grupo).
-                                        </p>
-                                    </div>
-                                    <Switch
-                                        id="allow_concurrent"
-                                        checked={allowConcurrent}
-                                        onCheckedChange={(checked) => setValue('allow_concurrent_bookings', checked)}
-                                    />
-                                </div>
-
-                                {/* Capacity Input (Conditional) */}
-                                {allowConcurrent && (
-                                    <div className="space-y-2 pb-4 border-b">
-                                        <Label htmlFor="max_capacity" className="text-base font-medium">
-                                            Capacidade máxima por horário
-                                        </Label>
-                                        <Input
-                                            id="max_capacity"
-                                            type="number"
-                                            min="1"
-                                            max="50"
-                                            {...register('max_capacity_per_slot', { valueAsNumber: true })}
-                                            className="w-32"
-                                        />
-                                        <p className="text-sm text-muted-foreground">
-                                            Número máximo de alunos que podem ser agendados no mesmo horário.
-                                        </p>
-                                    </div>
-                                )}
-
-                                {/* Default Session Duration */}
-                                <div className="space-y-2">
-                                    <Label htmlFor="session_duration" className="text-base font-medium">
-                                        Tempo padrão de treino (minutos)
-                                    </Label>
-                                    <Input
-                                        id="session_duration"
-                                        type="number"
-                                        min="15"
-                                        max="240"
-                                        step="15"
-                                        {...register('default_session_duration', { valueAsNumber: true })}
-                                        className="w-32"
-                                    />
-                                    <p className="text-sm text-muted-foreground">
-                                        Duração padrão de cada sessão de treino. Esse valor será usado ao criar novos agendamentos.
-                                    </p>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-                </TabsContent>
-            </Tabs>
-        </div>
+        </form>
     );
 }

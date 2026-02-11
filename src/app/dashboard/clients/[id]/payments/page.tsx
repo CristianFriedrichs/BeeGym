@@ -6,22 +6,22 @@ import Link from 'next/link';
 import { ArrowLeft, CheckCircle, Clock, XCircle, FileText, Calendar, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
 } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { students } from '../page'; // Re-using from parent
+import { initialClients as students } from '@/lib/mock-data';
 import { plans } from '@/lib/plans';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -54,9 +54,9 @@ const PaymentsHistoryPage = () => {
 
         try {
             const storedInvoices = localStorage.getItem('invoices_data');
-            if(storedInvoices) {
+            if (storedInvoices) {
                 const allInvoices = JSON.parse(storedInvoices);
-                
+
                 const now = new Date();
                 const processedInvoices = allInvoices.map((inv: any) => {
                     if (inv.status === 'Pendente' && now > parseISO(inv.dueDate)) {
@@ -70,7 +70,7 @@ const PaymentsHistoryPage = () => {
                     .sort((a: any, b: any) => parseISO(b.dueDate).getTime() - parseISO(a.dueDate).getTime());
                 setPaymentHistory(studentInvoices);
             }
-        } catch(error) {
+        } catch (error) {
             console.error("Failed to load invoices from localStorage", error);
         }
     }, [student]);
@@ -91,7 +91,7 @@ const PaymentsHistoryPage = () => {
                     </Link>
                 </Button>
                 <Avatar className="h-12 w-12">
-                    <AvatarImage src={student.avatar} alt={student.name}/>
+                    <AvatarImage src={student.avatar} alt={student.name} />
                     <AvatarFallback>{student.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div>
@@ -100,14 +100,14 @@ const PaymentsHistoryPage = () => {
                 </div>
             </div>
 
-             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 <Card className="shadow-soft p-5 flex items-start justify-between">
                     <div>
                         <p className="text-sm font-bold text-muted-foreground uppercase tracking-wide mb-1">Plano Atual</p>
                         <h3 className="text-2xl font-bold text-foreground mb-2">{currentPlan.name}</h3>
                         <div className="flex items-center gap-2">
-                             <Badge variant={student.status === "Ativo" ? "default" : "destructive"} className={cn(student.status === 'Ativo' && 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400')}>{student.status}</Badge>
-                             <p className="text-xs text-muted-foreground">Desde {student.memberSince}</p>
+                            <Badge variant={student.status === "Ativo" ? "default" : "destructive"} className={cn(student.status === 'Ativo' && 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400')}>{student.status}</Badge>
+                            <p className="text-xs text-muted-foreground">Desde {student.memberSince}</p>
                         </div>
                     </div>
                     <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 bg-blue-100 dark:bg-blue-900/30">
@@ -115,7 +115,7 @@ const PaymentsHistoryPage = () => {
                     </div>
                 </Card>
 
-                 <Card className="shadow-soft p-5 flex items-start justify-between">
+                <Card className="shadow-soft p-5 flex items-start justify-between">
                     <div>
                         <p className="text-sm font-bold text-muted-foreground uppercase tracking-wide mb-1">Faturas Pagas</p>
                         <h3 className="text-3xl font-bold text-foreground mb-2">{paidInvoices}</h3>
@@ -126,13 +126,13 @@ const PaymentsHistoryPage = () => {
                     </div>
                 </Card>
 
-                 <Card className="shadow-soft p-5 flex items-start justify-between">
+                <Card className="shadow-soft p-5 flex items-start justify-between">
                     <div>
                         <p className="text-sm font-bold text-muted-foreground uppercase tracking-wide mb-1">Faturas Pendentes</p>
                         <h3 className="text-3xl font-bold text-foreground mb-2">{pendingInvoices}</h3>
                         <p className="text-xs text-muted-foreground">Faturas vencidas ou em aberto</p>
                     </div>
-                     <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 bg-yellow-100 dark:bg-yellow-900/30">
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 bg-yellow-100 dark:bg-yellow-900/30">
                         <Calendar className="h-6 w-6 text-yellow-500 dark:text-yellow-400" />
                     </div>
                 </Card>

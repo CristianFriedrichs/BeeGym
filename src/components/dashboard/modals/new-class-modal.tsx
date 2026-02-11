@@ -24,7 +24,7 @@ interface NewClassModalProps {
 interface Room {
     id: string;
     name: string;
-    capacity: number;
+    capacity: number | null;
 }
 
 interface Instructor {
@@ -75,8 +75,8 @@ export function NewClassModal({ open, onOpenChange, onSuccess }: NewClassModalPr
             if (!user) return;
 
             const { data: userData } = await supabase
-                .from('users')
-                .select('organization_id, unit_id')
+                .from('profiles')
+                .select('organization_id')
                 .eq('id', user.id)
                 .single();
 
@@ -89,16 +89,24 @@ export function NewClassModal({ open, onOpenChange, onSuccess }: NewClassModalPr
                 .eq('organization_id', userData.organization_id)
                 .order('name');
 
-            if (roomsData) setRooms(roomsData);
+            if (roomsData) setRooms((roomsData as any[]).map(r => ({
+                id: r.id,
+                name: r.name,
+                capacity: r.capacity || 0
+            })));
 
             // Fetch instructors
             const { data: instructorsData } = await supabase
-                .from('users')
+                .from('profiles')
                 .select('id, full_name, avatar_url')
                 .eq('organization_id', userData.organization_id)
                 .order('full_name');
 
-            if (instructorsData) setInstructors(instructorsData);
+            if (instructorsData) setInstructors((instructorsData as any[]).map(i => ({
+                id: i.id,
+                full_name: i.full_name || 'Instrutor',
+                avatar_url: i.avatar_url || null
+            })));
         } catch (error) {
             console.error('Error fetching data:', error);
             toast({
@@ -132,7 +140,8 @@ export function NewClassModal({ open, onOpenChange, onSuccess }: NewClassModalPr
 
         // Check if capacity exceeds room capacity
         const selectedRoomData = rooms.find(r => r.id === selectedRoom);
-        if (selectedRoomData && capacityNum > selectedRoomData.capacity) {
+        const roomCapacity = selectedRoomData?.capacity || 0;
+        if (selectedRoomData && capacityNum > roomCapacity) {
             toast({
                 title: 'Capacidade excedida',
                 description: `A capacidade da sala ${selectedRoomData.name} é de ${selectedRoomData.capacity} pessoas.`,
@@ -148,26 +157,31 @@ export function NewClassModal({ open, onOpenChange, onSuccess }: NewClassModalPr
             if (!user) throw new Error('Usuário não autenticado');
 
             const { data: userData } = await supabase
-                .from('users')
-                .select('organization_id, unit_id')
+                .from('profiles')
+                .select('organization_id')
                 .eq('id', user.id)
                 .single();
 
             if (!userData?.organization_id) throw new Error('Organização não encontrada');
 
-            const { error } = await supabase
-                .from('calendar_events')
+            const startDateTime = new Date(selectedDate);
+            const [hours, minutes] = selectedTime.split(':').map(Number);
+            startDateTime.setHours(hours, minutes, 0, 0);
+
+            const endDateTime = new Date(startDateTime);
+            endDateTime.setMinutes(endDateTime.getMinutes() + parseInt(selectedDuration));
+
+            const { error } = await (supabase
+                .from('calendar_events') as any)
                 .insert({
-                    name: className,
+                    title: className,
                     room_id: selectedRoom,
                     instructor_id: selectedInstructor,
                     organization_id: userData.organization_id,
-                    unit_id: userData.unit_id,
-                    date: format(selectedDate, 'yyyy-MM-dd'),
-                    start_time: selectedTime,
-                    duration: parseInt(selectedDuration),
-                    capacity_limit: capacityNum,
-                    event_type: 'AULA',
+                    start_datetime: startDateTime.toISOString(),
+                    end_datetime: endDateTime.toISOString(),
+                    capacity: capacityNum,
+                    type: 'CLASS',
                     status: 'SCHEDULED',
                 });
 

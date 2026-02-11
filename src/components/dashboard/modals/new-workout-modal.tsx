@@ -72,31 +72,39 @@ export function NewWorkoutModal({ open, onOpenChange, onSuccess }: NewWorkoutMod
             if (!user) return;
 
             const { data: userData } = await supabase
-                .from('users')
-                .select('organization_id, unit_id')
+                .from('profiles')
+                .select('organization_id')
                 .eq('id', user.id)
                 .single();
 
             if (!userData?.organization_id) return;
 
             // Fetch students
-            const { data: studentsData } = await supabase
+            const { data: studentsData } = await (supabase
                 .from('students')
-                .select('id, full_name, avatar_url')
+                .select('id, full_name' as any)
                 .eq('organization_id', userData.organization_id)
                 .eq('status', 'ACTIVE')
-                .order('full_name');
+                .order('full_name') as any);
 
-            if (studentsData) setStudents(studentsData);
+            if (studentsData) setStudents((studentsData as any[]).map(s => ({
+                id: s.id,
+                full_name: s.full_name,
+                avatar_url: null
+            })));
 
-            // Fetch instructors (users from same org)
+            // Fetch instructors (profiles with instructor role or relevant data)
             const { data: instructorsData } = await supabase
-                .from('users')
-                .select('id, full_name, avatar_url')
+                .from('profiles')
+                .select('id, full_name')
                 .eq('organization_id', userData.organization_id)
                 .order('full_name');
 
-            if (instructorsData) setInstructors(instructorsData);
+            if (instructorsData) setInstructors((instructorsData as any[]).map(i => ({
+                id: i.id,
+                full_name: i.full_name || 'Instrutor',
+                avatar_url: null
+            })));
         } catch (error) {
             console.error('Error fetching data:', error);
             toast({
@@ -125,28 +133,48 @@ export function NewWorkoutModal({ open, onOpenChange, onSuccess }: NewWorkoutMod
             if (!user) throw new Error('Usuário não autenticado');
 
             const { data: userData } = await supabase
-                .from('users')
-                .select('organization_id, unit_id')
+                .from('profiles')
+                .select('organization_id')
                 .eq('id', user.id)
                 .single();
 
             if (!userData?.organization_id) throw new Error('Organização não encontrada');
 
-            const { error } = await supabase
-                .from('calendar_events')
+            const startDateTime = new Date(selectedDate);
+            const [hours, minutes] = selectedTime.split(':').map(Number);
+            startDateTime.setHours(hours, minutes, 0, 0);
+
+            const endDateTime = new Date(startDateTime);
+            endDateTime.setMinutes(endDateTime.getMinutes() + parseInt(selectedDuration));
+
+            const { data: eventData, error: eventError } = await (supabase
+                .from('calendar_events') as any)
                 .insert({
-                    student_id: selectedStudent,
+                    title: 'Treino Individual',
                     instructor_id: selectedInstructor,
                     organization_id: userData.organization_id,
-                    unit_id: userData.unit_id,
-                    date: format(selectedDate, 'yyyy-MM-dd'),
-                    start_time: selectedTime,
-                    duration: parseInt(selectedDuration),
-                    event_type: 'TREINO',
+                    start_datetime: startDateTime.toISOString(),
+                    end_datetime: endDateTime.toISOString(),
+                    type: 'TRAINING',
                     status: 'SCHEDULED',
-                });
+                })
+                .select()
+                .single();
 
-            if (error) throw error;
+            if (eventError) throw eventError;
+
+            // Insert into attendance_logs to link student
+            if (eventData) {
+                const { error: attendanceError } = await (supabase
+                    .from('attendance_logs' as any) as any)
+                    .insert({
+                        event_id: eventData.id,
+                        student_id: selectedStudent,
+                        present: false
+                    });
+
+                if (attendanceError) throw attendanceError;
+            }
 
             toast({
                 title: 'Treino agendado!',

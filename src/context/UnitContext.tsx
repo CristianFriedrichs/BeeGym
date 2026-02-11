@@ -32,8 +32,8 @@ export function UnitProvider({ children }: { children: ReactNode }) {
 
                 // Get user's organization and name
                 const { data: userData, error: userError } = await supabase
-                    .from('users')
-                    .select('organization_id, name')
+                    .from('profiles')
+                    .select('organization_id, full_name')
                     .eq('id', user.id)
                     .single();
 
@@ -63,12 +63,14 @@ export function UnitProvider({ children }: { children: ReactNode }) {
                 if (!units || units.length === 0) {
                     console.warn('[UnitContext] ⚠️ No units found in DB. Activating FALLBACK AUTO-CURA.');
 
-                    const fallbackUnit = {
+                    const fallbackUnit: any = {
                         id: userData.organization_id, // Use Org ID as Unit ID for fallback
-                        name: 'Personal ' + (userData.name || 'User'),
+                        name: 'Personal ' + (userData.full_name || 'User'),
                         business_type: 'personal',
                         active: true,
-                        organization_id: userData.organization_id
+                        organization_id: userData.organization_id,
+                        address_json: null,
+                        created_at: new Date().toISOString()
                     };
 
                     units = [fallbackUnit];

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader2, Save, Upload } from 'lucide-react';
 
 export default function ProfilePage() {
+    const router = useRouter();
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [showPublicProfile, setShowPublicProfile] = useState(true);
@@ -34,9 +36,9 @@ export default function ProfilePage() {
 
                 setUserId(user.id);
 
-                // Get user profile data from public.users table
+                // Get user profile data from public.profiles table
                 const { data: userData, error } = await supabase
-                    .from('users')
+                    .from('profiles')
                     .select('*')
                     .eq('id', user.id)
                     .single();
@@ -51,7 +53,7 @@ export default function ProfilePage() {
                 const finalAvatar = dbAvatar || authAvatar || '';
 
                 if (userData) {
-                    setFullName(userData.name || '');
+                    setFullName(userData.full_name || '');
                     setProfessionalTitle(userData.job_title || '');
                     setBio(userData.bio || '');
                     setAvatarUrl(finalAvatar);
@@ -92,9 +94,9 @@ export default function ProfilePage() {
                 .from('avatars')
                 .getPublicUrl(filePath);
 
-            // Update users table
+            // Update profiles table
             const { error: updateError } = await supabase
-                .from('users')
+                .from('profiles')
                 .update({ avatar_url: publicUrl })
                 .eq('id', userId);
 
@@ -107,6 +109,7 @@ export default function ProfilePage() {
                 description: 'Sua foto de perfil foi salva com sucesso.',
                 className: 'bg-[#ff8c00] text-white border-none',
             });
+            router.refresh();
 
             // Force header to refresh
             window.dispatchEvent(new CustomEvent('userProfileUpdated'));
@@ -128,9 +131,9 @@ export default function ProfilePage() {
 
         try {
             const { error } = await supabase
-                .from('users')
+                .from('profiles')
                 .update({
-                    name: fullName,
+                    full_name: fullName,
                     job_title: professionalTitle,
                     bio: bio,
                     show_public_profile: showPublicProfile,
@@ -144,6 +147,7 @@ export default function ProfilePage() {
                 description: 'Suas informações foram salvas com sucesso.',
                 className: 'bg-[#ff8c00] text-white border-none',
             });
+            router.refresh();
 
             // Force header to refresh by dispatching custom event
             window.dispatchEvent(new CustomEvent('userProfileUpdated'));

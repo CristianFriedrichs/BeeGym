@@ -5,28 +5,28 @@ import Link from 'next/link';
 import { ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+    CardDescription,
 } from '@/components/ui/card';
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
 } from '@/components/ui/table';
-import { students } from '../page'; // Re-using from parent
+import { initialClients as students } from '@/lib/mock-data';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -35,8 +35,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 // More detailed mock data for this page, sorted in descending chronological order
 const frequencyHistory = [
-    { 
-        date: "2024-07-15", 
+    {
+        date: "2024-07-15",
         name: "Treino A - Peito e Tríceps",
         status: "Realizado",
         type: "Musculação",
@@ -44,9 +44,9 @@ const frequencyHistory = [
             { exercise: 'Supino Reto', sets: 4, reps: 10, load: '80kg' },
             { exercise: 'Supino Inclinado com Halteres', sets: 3, reps: 12, load: '30kg cada' },
             { exercise: 'Tríceps Pulley', sets: 3, reps: 15, load: '25kg' },
-        ] 
+        ]
     },
-    { 
+    {
         date: "2024-07-12",
         name: "HIIT Cardio",
         status: "Realizado",
@@ -56,8 +56,8 @@ const frequencyHistory = [
             { exercise: 'Bicicleta', time: '15min', distance: '5km', intensity: 'Moderada' },
         ]
     },
-    { 
-        date: "2024-07-10", 
+    {
+        date: "2024-07-10",
         name: "Treino B - Costas e Bíceps",
         status: "Realizado",
         type: "Musculação",
@@ -67,14 +67,14 @@ const frequencyHistory = [
             { exercise: 'Rosca Direta', sets: 3, reps: 15, load: '20kg' },
         ]
     },
-    { 
+    {
         date: "2024-07-08",
         name: "Treino A - Peito e Tríceps",
         status: "Falta",
         type: "Musculação",
         details: []
     },
-    { 
+    {
         date: "2024-07-05",
         name: "Treino Funcional",
         status: "Realizado",
@@ -105,7 +105,7 @@ const FrequencyHistoryPage = () => {
                     </Link>
                 </Button>
                 <Avatar className="h-12 w-12">
-                    <AvatarImage src={student.avatar} alt={student.name}/>
+                    <AvatarImage src={student.avatar} alt={student.name} />
                     <AvatarFallback>{student.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div>
@@ -125,7 +125,7 @@ const FrequencyHistoryPage = () => {
                             <AccordionItem value={`item-${index}`} key={index}>
                                 <AccordionTrigger className="text-left">
                                     <div className="flex items-center gap-4">
-                                        {item.status === 'Realizado' 
+                                        {item.status === 'Realizado'
                                             ? <CheckCircle className="h-5 w-5 text-green-500 shrink-0" />
                                             : <XCircle className="h-5 w-5 text-red-500 shrink-0" />
                                         }

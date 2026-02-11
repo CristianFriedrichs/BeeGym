@@ -1,33 +1,49 @@
-'use client';
+import { createClient } from '@/lib/supabase/server';
+import { PlanList } from '@/components/settings/plans/plan-list';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { CreditCard, Construction } from 'lucide-react';
+export default async function PlansPage() {
+    const supabase = await createClient();
 
-export default function PlansPage() {
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+        console.error('Auth error:', authError);
+        return <div className="p-8 text-center bg-card rounded-lg border">
+            <p className="text-destructive">Erro de autenticação. Por favor, faça login novamente.</p>
+        </div>;
+    }
+
+    // Get profile to find organization_id
+    const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('organization_id')
+        .eq('id', user.id)
+        .single();
+
+    if (profileError) {
+        console.error('Profile error:', profileError);
+        return <div className="p-8 text-center bg-card rounded-lg border">
+            <p className="text-destructive">Erro ao buscar perfil: {profileError.message}</p>
+        </div>;
+    }
+
+    if (!profile?.organization_id) {
+        return <div className="p-8 text-center bg-card rounded-lg border">Organização não encontrada.</div>;
+    }
+
+    const { data: plans, error } = await supabase
+        .from('membership_plans')
+        .select('*')
+        .eq('organization_id', profile.organization_id)
+        .order('name', { ascending: true }); // Changed from created_at to name
+
+    if (error) {
+        console.error('Error fetching plans:', error);
+    }
+
     return (
-        <div className="space-y-6">
-            <Card>
-                <CardHeader>
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                            <CreditCard className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                            <CardTitle>Planos</CardTitle>
-                            <CardDescription>Configure os planos e pacotes oferecidos.</CardDescription>
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex flex-col items-center justify-center py-12 text-center">
-                        <Construction className="h-12 w-12 text-muted-foreground mb-4" />
-                        <h3 className="text-lg font-semibold text-foreground">Funcionalidade em Desenvolvimento</h3>
-                        <p className="text-sm text-muted-foreground mt-2 max-w-md">
-                            Em breve você poderá criar planos, definir preços e configurar regras de cobrança.
-                        </p>
-                    </div>
-                </CardContent>
-            </Card>
+        <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+            <PlanList plans={plans || []} organizationId={profile.organization_id} />
         </div>
     );
 }

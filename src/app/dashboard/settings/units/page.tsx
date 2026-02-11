@@ -1,9 +1,41 @@
-'use client';
-
+import { createClient } from '@/lib/supabase/server';
+import { redirect } from 'next/navigation';
+import { UnitList } from '@/components/settings/units/unit-list';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Building2, Construction } from 'lucide-react';
+import { Building2 } from 'lucide-react';
 
-export default function UnitsPage() {
+export default async function UnitsPage() {
+    const supabase = await createClient();
+
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        redirect('/login');
+    }
+
+    // Get current user's organization from profiles (Source of Truth)
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('organization_id')
+        .eq('id', user.id)
+        .single();
+
+    if (!profile?.organization_id) {
+        return (
+            <div className="p-8 text-center text-muted-foreground">
+                Erro: Usuário sem organização vinculada.
+            </div>
+        );
+    }
+
+    // Fetch units for this organization
+    const { data: units } = await supabase
+        .from('units')
+        .select('*')
+        .eq('organization_id', profile.organization_id)
+        .order('is_main', { ascending: false })
+        .order('name');
+
     return (
         <div className="space-y-6">
             <Card>
@@ -19,13 +51,10 @@ export default function UnitsPage() {
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="flex flex-col items-center justify-center py-12 text-center">
-                        <Construction className="h-12 w-12 text-muted-foreground mb-4" />
-                        <h3 className="text-lg font-semibold text-foreground">Funcionalidade em Desenvolvimento</h3>
-                        <p className="text-sm text-muted-foreground mt-2 max-w-md">
-                            Em breve você poderá adicionar novas unidades, definir endereços e configurar cada filial.
-                        </p>
-                    </div>
+                    <UnitList
+                        units={units as any[] || []}
+                        organizationId={profile.organization_id}
+                    />
                 </CardContent>
             </Card>
         </div>

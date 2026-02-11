@@ -157,14 +157,18 @@ export function Header() {
 
     // Fetch User Profile from public.users table
     async function loadUser() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      console.log('HEADER: Auth User:', user, 'Error:', authError);
+
       if (user) {
-        // Fetch from public.users table for real data
-        const { data: userData } = await supabase
-          .from('users')
-          .select('name, avatar_url, email, organization_id')
+        // Fetch from public.profiles table for real data
+        const { data: userData, error: dbError } = await supabase
+          .from('profiles')
+          .select('full_name, avatar_url, email, organization_id')
           .eq('id', user.id)
           .single();
+
+        console.log('HEADER: Profile Data:', userData, 'DB Error:', dbError);
 
         // Priority fallback for avatar: db → auth metadata → null
         const dbAvatar = userData?.avatar_url;
@@ -173,7 +177,7 @@ export function Header() {
 
         if (userData) {
           setUserProfile({
-            full_name: userData.name || user.user_metadata?.full_name || 'Usuário',
+            full_name: userData.full_name || user.user_metadata?.full_name || 'Usuário',
             avatar_url: finalAvatar,
             email: userData.email || user.email || '',
             business_type: user.user_metadata?.business_type || null
@@ -202,7 +206,16 @@ export function Header() {
         }
       }
     }
-    loadUser();
+    // Listen for Auth Changes to ensure we load user if session restores late
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        // Debounce or just call loadUser? calling is fine.
+        console.log('HEADER: Auth State Changed:', event, session.user.id);
+        loadUser();
+      }
+    });
+
+    loadUser(); // Initial try
 
     // Listen for profile updates from profile page
     const handleProfileUpdate = () => {
@@ -256,6 +269,7 @@ export function Header() {
 
     mediaQuery.addEventListener('change', handleChange);
     return () => {
+      subscription.unsubscribe();
       mediaQuery.removeEventListener('change', handleChange);
       window.removeEventListener('storage-update', syncStateFromStorage);
       window.removeEventListener('userProfileUpdated', handleProfileUpdate);
@@ -323,21 +337,15 @@ export function Header() {
 
   const hasMultipleUnits = units.length > 1;
 
-  if (!mounted) {
-    return (
-      <header className="h-20 bg-card border-b flex items-center justify-between px-4 md:px-8 flex-shrink-0 z-10">
-        <div className="flex-1"></div>
-        {/* Skeleton or minimal loading state */}
-      </header>
-    )
-  }
+  // Always render the header structure to prevent "layout shift" or "missing topbar"
+  // Skeleton state can be handled within the inner components if needed.
 
   return (
-    <header className="h-20 bg-card border-b flex items-center justify-between px-4 md:px-8 flex-shrink-0 z-10">
+    <header className="h-16 bg-card border-b flex items-center justify-between px-6 flex-shrink-0 z-10 transition-all duration-200">
       <div className="flex-1 md:flex-none">
-        <div className="hidden md:flex items-center bg-muted rounded-full px-4 py-2.5 w-96 border border-transparent focus-within:border-primary transition-colors">
-          <Search className="h-4 w-4 text-muted-foreground" />
-          <input className="bg-transparent border-none focus:ring-0 text-sm ml-2 w-full text-foreground placeholder-muted-foreground" placeholder={t.searchPlaceholder} type="text" />
+        <div className="hidden md:flex items-center bg-muted/50 hover:bg-muted/80 rounded-full px-4 py-2 w-80 lg:w-96 border border-transparent focus-within:border-primary/50 focus-within:bg-background transition-all">
+          <Search className="h-4 w-4 text-muted-foreground group-focus-within:text-primary" />
+          <input className="bg-transparent border-none focus:ring-0 text-sm ml-2 w-full text-foreground placeholder-muted-foreground/70" placeholder={t.searchPlaceholder} type="text" />
         </div>
       </div>
 
