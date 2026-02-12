@@ -5,6 +5,9 @@ import { revalidatePath } from 'next/cache';
 import { logActivity } from '@/services/logger';
 import { randomUUID } from 'crypto';
 
+
+import { requirePermission } from '@/lib/rbac';
+
 export async function createTeamMemberAction(formData: {
     fullName: string;
     email?: string;
@@ -15,6 +18,9 @@ export async function createTeamMemberAction(formData: {
     hasSystemAccess: boolean;
     isInstructor: boolean;
 }) {
+    // ✅ Check permission
+    await requirePermission('settings', 'manage');
+
     try {
         let profileId: string;
 
@@ -53,6 +59,11 @@ export async function createTeamMemberAction(formData: {
                 email_confirm: true,
                 user_metadata: {
                     full_name: formData.fullName,
+                },
+                app_metadata: {
+                    status: 'ACTIVE',
+                    organization_id: formData.organizationId,
+                    role: formData.role,
                 }
             });
 
@@ -159,6 +170,9 @@ export async function updateTeamMemberAction(formData: {
     roleId?: string;
     organizationId: string;
 }) {
+    // ✅ Check permission
+    await requirePermission('settings', 'manage');
+
     try {
         // 1. Update profile
         const { error: dbError } = await supabaseAdmin

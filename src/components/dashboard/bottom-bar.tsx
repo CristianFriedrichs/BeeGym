@@ -15,10 +15,10 @@ import { usePathname } from 'next/navigation';
 
 const menuItems = [
   { icon: LayoutDashboard, label: 'Home', href: '/dashboard' },
-  { icon: Calendar, label: 'Agenda', href: '/dashboard/calendar' },
-  { icon: Users, label: 'Alunos', href: '/dashboard/clients' },
-  { icon: MessageSquare, label: 'Conversas', href: '/dashboard/conversations' },
-  { icon: ClipboardList, label: 'Aulas', href: '/dashboard/classes' },
+  { icon: Calendar, label: 'Agenda', href: '/calendar' },
+  { icon: Users, label: 'Alunos', href: '/clients' },
+  { icon: MessageSquare, label: 'Conversas', href: '/conversations' },
+  { icon: ClipboardList, label: 'Aulas', href: '/classes' },
 ];
 
 export function BottomBar() {

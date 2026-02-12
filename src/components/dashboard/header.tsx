@@ -444,7 +444,7 @@ export function Header() {
               </div>
             </div>
             <DropdownMenuSeparator className="sm:hidden" />
-            <DropdownMenuItem asChild><Link href="/dashboard/settings/profile" className="cursor-pointer flex items-center gap-2"><User className="h-4 w-4" />{t.myProfile}</Link></DropdownMenuItem>
+            <DropdownMenuItem asChild><Link href="/settings/profile" className="cursor-pointer flex items-center gap-2"><User className="h-4 w-4" />{t.myProfile}</Link></DropdownMenuItem>
             <DropdownMenuItem className="cursor-pointer">{t.support}</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive cursor-pointer group">

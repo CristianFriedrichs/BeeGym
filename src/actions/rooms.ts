@@ -4,12 +4,15 @@ import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { logActivity } from '@/services/logger';
 
+import { requirePermission } from '@/lib/rbac';
+
 export async function createRoomAction(formData: {
     name: string;
     unit_id: string;
     capacity: number;
     description?: string;
 }) {
+    await requirePermission('settings', 'manage');
     const supabase = await createClient();
 
     const { data, error } = await supabase
@@ -41,6 +44,7 @@ export async function updateRoomAction(roomId: string, formData: {
     capacity?: number;
     description?: string;
 }) {
+    await requirePermission('settings', 'manage');
     const supabase = await createClient();
 
     const { error } = await supabase
@@ -66,6 +70,7 @@ export async function updateRoomAction(roomId: string, formData: {
 }
 
 export async function deleteRoomAction(roomId: string) {
+    await requirePermission('settings', 'manage');
     const supabase = await createClient();
 
     const { error } = await supabase

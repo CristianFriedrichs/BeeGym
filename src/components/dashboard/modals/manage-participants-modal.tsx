@@ -71,7 +71,7 @@ export function ManageParticipantsModal({
 
         try {
             const { data, error } = await supabase
-                .from('event_participants')
+                .from('event_participants' as any)
                 .select(`
                     id,
                     student_id,
@@ -109,7 +109,7 @@ export function ManageParticipantsModal({
             if (!user) return;
 
             const { data: userData } = await supabase
-                .from('users')
+                .from('profiles')
                 .select('organization_id')
                 .eq('id', user.id)
                 .single();
@@ -118,12 +118,18 @@ export function ManageParticipantsModal({
 
             const { data, error } = await supabase
                 .from('students')
-                .select('id, name, avatar_url')
+                .select('id, full_name, avatar_url')
                 .eq('organization_id', userData.organization_id)
-                .order('name');
+                .order('full_name');
 
             if (error) throw error;
-            if (data) setStudents(data);
+            if (data) {
+                setStudents(data.map((s: any) => ({
+                    id: s.id,
+                    name: s.full_name,
+                    avatar_url: s.avatar_url
+                })));
+            }
         } catch (error) {
             console.error('Error fetching students:', error);
         }

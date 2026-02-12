@@ -118,7 +118,7 @@ export async function getKPIs(unitId?: string): Promise<KPI[]> {
 
 import { QueryData } from '@supabase/supabase-js';
 
-export async function getUpcomingClasses(organizationId: string): Promise<ScheduleItem[]> {
+export async function getUpcomingClasses(organizationId?: string): Promise<ScheduleItem[]> {
     const supabase = createClient();
 
     // TRAVA DE SEGURANÇA: Só busca se tiver o ID da organização

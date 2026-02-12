@@ -12,7 +12,10 @@ export interface FinancialSettings {
     config_notify_overdue: boolean;
 }
 
+import { requirePermission } from '@/lib/rbac';
+
 export async function getFinancialSettingsAction() {
+    await requirePermission('financial', 'view');
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();
@@ -54,6 +57,7 @@ export async function getFinancialSettingsAction() {
 }
 
 export async function updateFinancialSettingsAction(settings: Partial<FinancialSettings>) {
+    await requirePermission('financial', 'manage');
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();

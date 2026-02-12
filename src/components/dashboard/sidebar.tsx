@@ -18,14 +18,14 @@ import { BeeGymLogo } from '@/components/ui/beegym-logo';
 
 const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
-  { icon: Calendar, label: 'Agenda', href: '/dashboard/calendar' },
-  { icon: ClipboardList, label: 'Aulas', href: '/dashboard/classes' },
-  { icon: Users, label: 'Alunos', href: '/dashboard/clients' },
-  { icon: MessageSquare, label: 'Conversas', href: '/dashboard/conversations' },
-  { icon: CreditCard, label: 'Pagamentos', href: '/dashboard/payments' },
-  { icon: Dumbbell, label: 'Exercícios', href: '/dashboard/workouts/library' },
-  { icon: BarChart3, label: 'Relatórios', href: '/dashboard/reports' },
-  { icon: Settings, label: 'Configurações', href: '/dashboard/settings' },
+  { icon: Calendar, label: 'Agenda', href: '/calendar' },
+  { icon: ClipboardList, label: 'Aulas', href: '/classes' },
+  { icon: Users, label: 'Alunos', href: '/clients' },
+  { icon: MessageSquare, label: 'Conversas', href: '/conversations' },
+  { icon: CreditCard, label: 'Pagamentos', href: '/payments' },
+  { icon: Dumbbell, label: 'Exercícios', href: '/workouts/library' },
+  { icon: BarChart3, label: 'Relatórios', href: '/reports' },
+  { icon: Settings, label: 'Configurações', href: '/settings' },
 ];
 
 export function Sidebar() {

@@ -4,6 +4,8 @@ import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { logActivity } from '@/services/logger';
 
+import { requirePermission } from '@/lib/rbac';
+
 export async function createPlanAction(formData: {
     name: string;
     description?: string;
@@ -21,6 +23,7 @@ export async function createPlanAction(formData: {
 
     organization_id: string;
 }) {
+    await requirePermission('settings', 'manage');
     const supabase = await createClient();
 
     // Build insert data based on plan type
@@ -78,6 +81,7 @@ export async function createPlanAction(formData: {
 }
 
 export async function updatePlanAction(planId: string, formData: any) {
+    await requirePermission('settings', 'manage');
     const supabase = await createClient();
 
     // Build update data based on plan type
@@ -88,6 +92,7 @@ export async function updatePlanAction(planId: string, formData: any) {
         plan_type: formData.plan_type,
         active: formData.active,
     };
+    // ... avoiding massive duplication, let's use exact match for start.
 
     let updateData;
 
@@ -133,6 +138,7 @@ export async function updatePlanAction(planId: string, formData: any) {
 }
 
 export async function togglePlanStatusAction(planId: string, active: boolean) {
+    await requirePermission('settings', 'manage');
     const supabase = await createClient();
 
     const { error } = await supabase

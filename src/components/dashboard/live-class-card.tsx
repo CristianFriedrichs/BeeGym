@@ -94,7 +94,7 @@ export function LiveClassCard() {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
                 const { data: userData } = await supabase
-                    .from('users')
+                    .from('profiles')
                     .select('organization_id')
                     .eq('id', user.id)
                     .single();
@@ -175,7 +175,7 @@ export function LiveClassCard() {
 
         try {
             const { error } = await supabase
-                .from('attendance_logs')
+                .from('attendance_logs' as any)
                 .update({
                     status: 'PRESENT',
                     confirmed_by_user: 'TRUE'

@@ -132,7 +132,12 @@ export function NewTrainingModal({ open, onOpenChange, onSuccess }: NewTrainingM
                 .eq('organization_id', userData.organization_id)
                 .order('name');
 
-            if (roomsData) setRooms(roomsData);
+            if (roomsData) {
+                setRooms(roomsData.map(r => ({
+                    ...r,
+                    capacity: r.capacity || 0
+                })));
+            }
         } catch (error) {
             console.error('Error fetching data:', error);
             toast({

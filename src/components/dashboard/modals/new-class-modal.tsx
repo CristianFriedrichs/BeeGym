@@ -10,7 +10,23 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
 import { createClient } from '@/lib/supabase/client';
-import { CalendarIcon, Clock, Users, Home, Hash } from 'lucide-react';
+import {
+    CalendarIcon,
+    Clock,
+    Users,
+    Home,
+    Hash,
+    Heart,
+    Sparkles,
+    Zap,
+    Dumbbell,
+    Activity,
+    Target,
+    Waves,
+    Music,
+    MoreHorizontal,
+    type LucideIcon
+} from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -32,6 +48,25 @@ interface Instructor {
     full_name: string;
     avatar_url: string | null;
 }
+
+interface ClassType {
+    value: string;
+    label: string;
+    icon: LucideIcon;
+    color: string;
+}
+
+const CLASS_TYPES: ClassType[] = [
+    { value: 'yoga', label: 'Yoga', icon: Heart, color: '#10B981' },
+    { value: 'pilates', label: 'Pilates', icon: Sparkles, color: '#8B5CF6' },
+    { value: 'crossfit', label: 'Crossfit', icon: Zap, color: '#EF4444' },
+    { value: 'musculacao', label: 'Musculação', icon: Dumbbell, color: '#F59E0B' },
+    { value: 'spinning', label: 'Spinning', icon: Activity, color: '#3B82F6' },
+    { value: 'funcional', label: 'Funcional', icon: Target, color: '#EC4899' },
+    { value: 'natacao', label: 'Natação', icon: Waves, color: '#06B6D4' },
+    { value: 'danca', label: 'Dança', icon: Music, color: '#F97316' },
+    { value: 'outro', label: 'Outro', icon: MoreHorizontal, color: '#6B7280' },
+];
 
 const DURATION_OPTIONS = [
     { value: '30', label: '30 minutos' },
@@ -55,6 +90,7 @@ export function NewClassModal({ open, onOpenChange, onSuccess }: NewClassModalPr
     const [instructors, setInstructors] = useState<Instructor[]>([]);
     const [loading, setLoading] = useState(false);
 
+    const [classType, setClassType] = useState<string>('');
     const [className, setClassName] = useState<string>('');
     const [selectedRoom, setSelectedRoom] = useState<string>('');
     const [selectedInstructor, setSelectedInstructor] = useState<string>('');
@@ -119,7 +155,7 @@ export function NewClassModal({ open, onOpenChange, onSuccess }: NewClassModalPr
 
     async function handleSubmit() {
         // Validation
-        if (!className || !selectedRoom || !selectedInstructor || !capacity || !selectedDate || !selectedTime || !selectedDuration) {
+        if (!classType || !className || !selectedRoom || !selectedInstructor || !capacity || !selectedDate || !selectedTime || !selectedDuration) {
             toast({
                 title: 'Campos obrigatórios',
                 description: 'Por favor, preencha todos os campos.',
@@ -193,6 +229,7 @@ export function NewClassModal({ open, onOpenChange, onSuccess }: NewClassModalPr
             });
 
             // Reset form
+            setClassType('');
             setClassName('');
             setSelectedRoom('');
             setSelectedInstructor('');
@@ -225,6 +262,47 @@ export function NewClassModal({ open, onOpenChange, onSuccess }: NewClassModalPr
                 </DialogHeader>
 
                 <div className="space-y-4 py-4">
+                    {/* Class Type */}
+                    <div className="space-y-2">
+                        <Label htmlFor="classType" className="font-sans text-sm font-medium">
+                            Tipo de Aula *
+                        </Label>
+                        <Select value={classType} onValueChange={setClassType}>
+                            <SelectTrigger id="classType">
+                                <SelectValue placeholder="Selecione o tipo de aula">
+                                    {classType && (() => {
+                                        const selected = CLASS_TYPES.find(t => t.value === classType);
+                                        if (!selected) return null;
+                                        const Icon = selected.icon;
+                                        return (
+                                            <div className="flex items-center gap-2">
+                                                <div className="flex items-center justify-center w-6 h-6 rounded" style={{ backgroundColor: selected.color + '20' }}>
+                                                    <Icon className="h-4 w-4" style={{ color: selected.color }} />
+                                                </div>
+                                                <span>{selected.label}</span>
+                                            </div>
+                                        );
+                                    })()}
+                                </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                                {CLASS_TYPES.map((type) => {
+                                    const Icon = type.icon;
+                                    return (
+                                        <SelectItem key={type.value} value={type.value}>
+                                            <div className="flex items-center gap-2">
+                                                <div className="flex items-center justify-center w-6 h-6 rounded" style={{ backgroundColor: type.color + '20' }}>
+                                                    <Icon className="h-4 w-4" style={{ color: type.color }} />
+                                                </div>
+                                                <span>{type.label}</span>
+                                            </div>
+                                        </SelectItem>
+                                    );
+                                })}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
                     {/* Class Name */}
                     <div className="space-y-2">
                         <Label htmlFor="className" className="font-sans text-sm font-medium flex items-center gap-2">

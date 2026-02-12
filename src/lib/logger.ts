@@ -2,9 +2,14 @@ export interface LogEntry {
     id: string;
     timestamp: string;
     action: string;
-    resource: string;
-    details: string;
+    resource?: string;
+    details?: any;
     metadata?: any;
+    user?: string;
+    origin?: string;
+    entity?: string;
+    entityId?: string;
+    description?: string;
 }
 
 type LogActionInput = Omit<LogEntry, 'id' | 'timestamp'>;

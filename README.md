@@ -8,6 +8,7 @@ Platforma moderna de gestão para academias, estúdios e personal trainers.
 - **Language:** TypeScript
 - **Styling:** Tailwind CSS, Shadcn/ui, Lucide React
 - **Backend (BaaS):** Supabase (Postgres, Auth, Storage, Realtime)
+- **AI Integration:** Firebase (Genkit AI)
 - **Validation:** Zod
 - **Forms:** React Hook Form
 - **Charts:** Recharts

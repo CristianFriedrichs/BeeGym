@@ -17,7 +17,10 @@ interface UpdateRoleData {
     permissions?: Permissions;
 }
 
+import { requirePermission } from '@/lib/rbac';
+
 export async function getRolesAction() {
+    await requirePermission('settings', 'view');
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();
@@ -50,6 +53,7 @@ export async function getRolesAction() {
 }
 
 export async function createRoleAction(roleData: CreateRoleData) {
+    await requirePermission('settings', 'manage');
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();
@@ -95,6 +99,7 @@ export async function createRoleAction(roleData: CreateRoleData) {
 }
 
 export async function updateRoleAction(roleId: string, roleData: UpdateRoleData) {
+    await requirePermission('settings', 'manage');
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();
@@ -131,6 +136,7 @@ export async function updateRoleAction(roleId: string, roleData: UpdateRoleData)
 }
 
 export async function deleteRoleAction(roleId: string) {
+    await requirePermission('settings', 'manage');
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();

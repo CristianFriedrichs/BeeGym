@@ -3,6 +3,10 @@ import { Quicksand, Roboto } from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from '@/lib/utils';
+import { validateEnv } from '@/lib/env';
+
+// Validate env vars at startup
+validateEnv();
 
 const quicksand = Quicksand({
   subsets: ['latin'],
@@ -32,7 +36,7 @@ export default function RootLayout({
         "transition-colors duration-200 antialiased",
         quicksand.variable,
         roboto.variable
-        )}>
+      )}>
         {children}
         <Toaster />
       </body>

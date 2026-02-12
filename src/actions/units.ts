@@ -4,6 +4,8 @@ import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { logActivity } from '@/services/logger';
 
+import { requirePermission } from '@/lib/rbac';
+
 export async function createUnitAction(formData: {
     name: string;
     manager_name?: string;
@@ -18,6 +20,7 @@ export async function createUnitAction(formData: {
     organization_id: string;
     services?: string[];
 }) {
+    await requirePermission('settings', 'manage');
     const supabase = await createClient();
 
     const { data, error } = await supabase
@@ -48,6 +51,7 @@ export async function createUnitAction(formData: {
 }
 
 export async function updateUnitAction(unitId: string, formData: any) {
+    await requirePermission('settings', 'manage');
     const supabase = await createClient();
 
     const { error } = await supabase
@@ -73,6 +77,7 @@ export async function updateUnitAction(unitId: string, formData: any) {
 }
 
 export async function deleteUnitAction(unitId: string) {
+    await requirePermission('settings', 'manage');
     const supabase = await createClient();
 
     // 1. Check if it's main

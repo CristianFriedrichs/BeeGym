@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
+import { requirePermission } from '@/lib/rbac';
 
 export interface FrequencySettings {
     config_min_presence_pct: number;
@@ -14,6 +15,7 @@ export interface FrequencySettings {
 }
 
 export async function getFrequencySettingsAction() {
+    await requirePermission('agenda', 'view');
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();
@@ -56,6 +58,7 @@ export async function getFrequencySettingsAction() {
 }
 
 export async function updateFrequencySettingsAction(settings: Partial<FrequencySettings>) {
+    await requirePermission('agenda', 'manage');
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();

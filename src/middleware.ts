@@ -73,29 +73,28 @@ export async function middleware(request: NextRequest) {
             // Only perform DB check if we are navigating critical flows
 
             // Fetch User Profile to check 'active' status
-            const { data: userData, error: dbError } = await supabase
-                .from('profiles')
-                .select('status, organization_id')
-                .eq('id', session.user.id)
-                .single()
+            // Optimized: Read from JWT metadata to avoid DB hit on every request
+            const status = session.user.app_metadata?.status;
+            const organizationId = session.user.app_metadata?.organization_id;
 
-            if (dbError) {
-                console.error('MIDDLEWARE DB ERROR:', dbError.message)
+            // Default to PENDING if status not set (legacy users)
+            // If organization_id is missing, also treat as incomplete
+            const isActive = status === 'ACTIVE' && !!organizationId;
+
+            if (process.env.NODE_ENV === 'development') {
+                console.log('MIDDLEWARE DEBUG:', {
+                    userId: session.user.id,
+                    status,
+                    orgId: organizationId,
+                    isActive
+                })
             }
-
-            console.log('MIDDLEWARE DEBUG:', {
-                userId: session.user.id,
-                status: userData?.status,
-                orgId: userData?.organization_id
-            })
-
-            // If status != 'ACTIVE', user is PENDING -> Force Onboarding
-            const isActive = userData?.status === 'ACTIVE'
 
             // Logic A: Incomplete Onboarding (!active)
             if (!isActive) {
                 // If NOT on onboarding page, force redirect
                 if (!isOnboardingPage) {
+                    const url = request.nextUrl.clone()
                     url.pathname = '/onboarding'
                     return NextResponse.redirect(url)
                 }
@@ -103,9 +102,10 @@ export async function middleware(request: NextRequest) {
             }
 
             // Logic B: Complete Onboarding (active)
-            if (isActive) {
+            else {
                 // If trying to access onboarding again, redirect to Dashboard
                 if (isOnboardingPage) {
+                    const url = request.nextUrl.clone()
                     url.pathname = '/'
                     return NextResponse.redirect(url)
                 }

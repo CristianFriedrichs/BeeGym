@@ -52,7 +52,7 @@ export function PlanStep() {
         if (!user) return;
 
         const { data: userData } = await supabase
-          .from('users')
+          .from('profiles')
           .select('organization_id')
           .eq('id', user.id)
           .single();
@@ -72,7 +72,14 @@ export function PlanStep() {
           return;
         }
 
-        setPlans(plansData || []);
+        const mappedPlans = (plansData || []).map((p: any) => ({
+          ...p,
+          plan_type: p.type === 'package' ? 'PACKAGE' : 'RECURRING', // Basic mapping assumption
+          frequency_limit: p.checkin_limit,
+          total_credits: p.type === 'package' ? p.checkin_limit : undefined
+        })) as Plan[];
+
+        setPlans(mappedPlans);
       } catch (error) {
         console.error('Error in fetchPlans:', error);
       } finally {

@@ -3,6 +3,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 
+import { requirePermission } from '@/lib/rbac';
+
 export interface LogFilters {
     dateFrom?: string;
     dateTo?: string;
@@ -12,6 +14,7 @@ export interface LogFilters {
 }
 
 export async function getSystemLogsAction(filters: LogFilters = {}) {
+    await requirePermission('settings', 'view');
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();
@@ -28,11 +31,6 @@ export async function getSystemLogsAction(filters: LogFilters = {}) {
 
     if (!profile?.organization_id) {
         return { success: false, error: 'Organização não encontrada' };
-    }
-
-    // Check if user is admin/owner/manager
-    if (!['ADMIN', 'OWNER', 'MANAGER'].includes(profile.role)) {
-        return { success: false, error: 'Acesso negado. Apenas administradores podem ver logs.' };
     }
 
     // Build query with filters
@@ -82,17 +80,28 @@ export async function getSystemLogsAction(filters: LogFilters = {}) {
         return { success: false, error: error.message };
     }
 
-    return { success: true, data };
+    const logs = data?.map((log: any) => ({
+        ...log,
+        user: Array.isArray(log.user) ? log.user[0] : log.user
+    }));
+
+    return { success: true, data: logs };
 }
 
 export async function createTestLogAction() {
+    await requirePermission('settings', 'manage');
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();
+    // ... (rest of code logic is fine, just injecting permission check)
     if (!user) {
         return { success: false, error: 'Usuário não autenticado' };
     }
+    // ...
+    // Since I can't use // ... effectively without risking deletion, I will provide the context carefully or use multi_replace for safety if I was editing multiple chunks. 
+    // Here I am replacing the function start.
 
+    // Actually, I should use the exact content.
     const { data: profile } = await supabase
         .from('profiles')
         .select('organization_id')
@@ -128,6 +137,7 @@ export async function createTestLogAction() {
 
 // Fetch team members for the user filter
 export async function getTeamMembersAction() {
+    await requirePermission('settings', 'view');
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();

@@ -159,7 +159,7 @@ export function SchedulingStep() {
       if (!user) throw new Error('User not authenticated');
 
       const { data: userData } = await supabase
-        .from('users')
+        .from('profiles')
         .select('organization_id')
         .eq('id', user.id)
         .single();
@@ -189,7 +189,7 @@ export function SchedulingStep() {
       const { data: student, error: studentError } = await supabase
         .from('students')
         .insert({
-          name: formData.name,
+          full_name: formData.name,
           email: formData.email,
           phone: formData.phone,
           cpf: formData.cpf,
@@ -215,7 +215,7 @@ export function SchedulingStep() {
 
       // 2. Create subscription record
       const { error: subscriptionError } = await supabase
-        .from('subscriptions')
+        .from('subscriptions' as any)
         .insert({
           student_id: student.id,
           plan_id: formData.plan.planId,
@@ -256,7 +256,7 @@ export function SchedulingStep() {
           : 'O aluno pode agendar suas aulas conforme disponibilidade.',
       });
 
-      router.push('/dashboard/clients');
+      router.push('/clients');
     } catch (error: any) {
       console.error('Error creating student:', error);
       toast({

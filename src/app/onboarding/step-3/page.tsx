@@ -49,8 +49,8 @@ export default function OnboardingStep3() {
                 // Parse student range to get max value
                 const studentCount = parseInt(data.studentRange.split('-')[1] || data.studentRange.replace('+', ''))
 
-                // Filter plans where max_students >= selected student count
-                const filteredPlans = plansData.filter(plan => plan.max_students >= studentCount)
+                // Filter plans where max_students >= selected student count or max_students is null (unlimited)
+                const filteredPlans = plansData.filter((plan: any) => plan.max_students === null || plan.max_students >= studentCount)
 
                 const formattedData = filteredPlans.map((plan: any) => ({
                     ...plan,
@@ -173,7 +173,7 @@ export default function OnboardingStep3() {
                                     <div className="space-y-2">
                                         <div className="flex items-center gap-2 text-sm">
                                             <Users className="h-4 w-4 text-muted-foreground" />
-                                            <span>Até {plan.max_students} alunos</span>
+                                            <span>{plan.max_students ? `Até ${plan.max_students} alunos` : 'Alunos ilimitados'}</span>
                                         </div>
                                         <div className="border-t pt-2 mt-2">
                                             <ul className="space-y-1">
