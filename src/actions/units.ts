@@ -46,7 +46,7 @@ export async function createUnitAction(formData: {
         metadata: { unit_id: data.id, ...formData },
     });
 
-    revalidatePath('/dashboard/settings/units');
+    revalidatePath('/painel/configuracoes/units');
     return { success: true, data };
 }
 
@@ -72,7 +72,7 @@ export async function updateUnitAction(unitId: string, formData: any) {
         metadata: { unit_id: unitId, changes: formData },
     });
 
-    revalidatePath('/dashboard/settings/units');
+    revalidatePath('/painel/configuracoes/units');
     return { success: true };
 }
 
@@ -109,6 +109,6 @@ export async function deleteUnitAction(unitId: string) {
         metadata: { unit_id: unitId },
     });
 
-    revalidatePath('/dashboard/settings/units');
+    revalidatePath('/painel/configuracoes/units');
     return { success: true };
 }

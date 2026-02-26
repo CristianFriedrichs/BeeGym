@@ -87,6 +87,6 @@ export async function updateFinancialSettingsAction(settings: Partial<FinancialS
         return { success: false, error: error.message };
     }
 
-    revalidatePath('/dashboard/settings/financial');
+    revalidatePath('/painel/configuracoes/financial');
     return { success: true };
 }

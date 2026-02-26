@@ -29,27 +29,28 @@ export type ClassType = {
   value: string;
   label: string;
   icon: any;
+  iconName: string; // DynamicIcon support
   color: string;
 };
 
 export const CLASS_TYPES: ClassType[] = [
-  { value: 'musculacao', label: 'Musculação', icon: Dumbbell, color: '#F59E0B' },
-  { value: 'hiit', label: 'HIIT', icon: Flame, color: '#000000' },
-  { value: 'yoga', label: 'Yoga', icon: Wind, color: '#10B981' },
-  { value: 'pilates', label: 'Pilates', icon: Sparkles, color: '#8B5CF6' },
-  { value: 'crossfit', label: 'Crossfit', icon: Zap, color: '#EF4444' },
-  { value: 'spinning', label: 'Spinning', icon: Bike, color: '#3B82F6' },
-  { value: 'funcional', label: 'Funcional', icon: Target, color: '#EC4899' },
-  { value: 'natacao', label: 'Natação', icon: Waves, color: '#06B6D4' },
-  { value: 'boxe', label: 'Boxe', icon: Swords, color: '#991B1B' },
-  { value: 'corrida', label: 'Corrida', icon: PersonStanding, color: '#F97316' },
-  { value: 'danca', label: 'Dança', icon: Smile, color: '#EC4899' },
-  { value: 'volei', label: 'Vôlei', icon: Volleyball || Activity, color: '#3B82F6' },
-  { value: 'futebol', label: 'Futebol', icon: Footprints, color: '#10B981' },
-  { value: 'basquete', label: 'Basquete', icon: Trophy, color: '#F59E0B' },
-  { value: 'cardio', label: 'Cardio', icon: Heart, color: '#EF4444' },
-  { value: 'fisioterapia', label: 'Fisioterapia', icon: Activity, color: '#14B8A6' },
-  { value: 'outro', label: 'Outro', icon: MoreHorizontal, color: '#6B7280' },
+  { value: 'musculacao', label: 'Musculação', icon: Dumbbell, iconName: 'Dumbbell', color: '#F59E0B' },
+  { value: 'hiit', label: 'HIIT', icon: Flame, iconName: 'Flame', color: '#000000' },
+  { value: 'yoga', label: 'Yoga', icon: Wind, iconName: 'Wind', color: '#10B981' },
+  { value: 'pilates', label: 'Pilates', icon: Sparkles, iconName: 'Sparkles', color: '#8B5CF6' },
+  { value: 'crossfit', label: 'Crossfit', icon: Zap, iconName: 'Zap', color: '#EF4444' },
+  { value: 'spinning', label: 'Spinning', icon: Bike, iconName: 'Bike', color: '#3B82F6' },
+  { value: 'funcional', label: 'Funcional', icon: Target, iconName: 'Target', color: '#EC4899' },
+  { value: 'natacao', label: 'Natação', icon: Waves, iconName: 'Waves', color: '#06B6D4' },
+  { value: 'boxe', label: 'Boxe', icon: Swords, iconName: 'Swords', color: '#991B1B' },
+  { value: 'corrida', label: 'Corrida', icon: PersonStanding, iconName: 'PersonStanding', color: '#F97316' },
+  { value: 'danca', label: 'Dança', icon: Smile, iconName: 'Smile', color: '#EC4899' },
+  { value: 'volei', label: 'Vôlei', icon: Volleyball || Activity, iconName: 'Volleyball', color: '#3B82F6' },
+  { value: 'futebol', label: 'Futebol', icon: Footprints, iconName: 'Footprints', color: '#10B981' },
+  { value: 'basquete', label: 'Basquete', icon: Trophy, iconName: 'Trophy', color: '#F59E0B' },
+  { value: 'cardio', label: 'Cardio', icon: Heart, iconName: 'Heart', color: '#EF4444' },
+  { value: 'fisioterapia', label: 'Fisioterapia', icon: Activity, iconName: 'Activity', color: '#14B8A6' },
+  { value: 'outro', label: 'Outro', icon: MoreHorizontal, iconName: 'MoreHorizontal', color: '#6B7280' },
 ];
 
 export const WEEKDAYS = [
@@ -76,9 +77,32 @@ export const TIME_SLOTS = [
   '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00', '21:30',
 ];
 
-export function getClassType(typeValue: string | null) {
-  if (!typeValue) return CLASS_TYPES.find(t => t.value === 'outro')!;
-  return CLASS_TYPES.find(t => t.value === typeValue) || CLASS_TYPES.find(t => t.value === 'outro')!;
+export function getClassType(typeValue: string | null, title?: string) {
+  // 1. Try direct match by value
+  if (typeValue) {
+    const match = CLASS_TYPES.find(t => t.value === typeValue.toLowerCase());
+    if (match) return match;
+  }
+
+  // 2. Try fuzzy match by title (if provided)
+  if (title) {
+    const lowerTitle = title.toLowerCase();
+    const match = CLASS_TYPES.find(t => lowerTitle.includes(t.label.toLowerCase()) || lowerTitle.includes(t.value.toLowerCase()));
+    if (match) return match;
+
+    // Specific keywords mapping
+    if (lowerTitle.includes('power') || lowerTitle.includes('força')) return CLASS_TYPES.find(t => t.value === 'musculacao')!;
+    if (lowerTitle.includes('pump')) return CLASS_TYPES.find(t => t.value === 'musculacao')!;
+    if (lowerTitle.includes('fight') || lowerTitle.includes('combat')) return CLASS_TYPES.find(t => t.value === 'boxe')!;
+    if (lowerTitle.includes('zumba') || lowerTitle.includes('ritmos')) return CLASS_TYPES.find(t => t.value === 'danca')!;
+    if (lowerTitle.includes('treino') || lowerTitle.includes('class')) return CLASS_TYPES.find(t => t.value === 'funcional')!;
+  }
+
+  // 3. Fallback to 'funcional' (Target icon) instead of 'outro' (...) for better UX in a gym context
+  // unless explicitly 'outro'
+  if (typeValue === 'outro') return CLASS_TYPES.find(t => t.value === 'outro')!;
+
+  return CLASS_TYPES.find(t => t.value === 'funcional') || CLASS_TYPES[0];
 }
 
 // --- LEGACY EXPORTS (Restored for backward compatibility with CalendarPage) ---

@@ -8,130 +8,94 @@ export async function middleware(request: NextRequest) {
         },
     })
 
-    try {
-        // Basic Supabase Client for Middleware (Handling Cookies)
-        const supabase = createServerClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-            {
-                cookies: {
-                    getAll() {
-                        return request.cookies.getAll()
-                    },
-                    setAll(cookiesToSet) {
-                        cookiesToSet.forEach(({ name, value, options }) => {
-                            request.cookies.set(name, value)
-                        })
-                        response = NextResponse.next({
-                            request,
-                        })
-                        cookiesToSet.forEach(({ name, value, options }) =>
-                            response.cookies.set(name, value, options)
-                        )
-                    },
+    const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+            cookies: {
+                getAll() {
+                    return request.cookies.getAll()
                 },
-            }
-        )
+                setAll(cookiesToSet: any[]) {
+                    cookiesToSet.forEach(({ name, value }) => {
+                        request.cookies.set(name, value)
+                    })
+                    response = NextResponse.next({
+                        request,
+                    })
+                    cookiesToSet.forEach(({ name, value, options }) =>
+                        response.cookies.set(name, value, options)
+                    )
+                },
+            },
+        }
+    )
 
-        // Auth Guard Logic
-        const {
-            data: { session },
-            error: sessionError,
-        } = await supabase.auth.getSession()
+    // 🔒 Verificar sessão
+    const {
+        data: { session },
+    } = await supabase.auth.getSession()
 
-        // If session is explicitly invalid (stale refresh token), force login
-        if (sessionError) {
-            console.error('SESSION ERROR:', sessionError.message)
-            const errorUrl = request.nextUrl.clone()
-            errorUrl.pathname = '/login'
-            // Clear any lingering auth cookies by setting them to expire
-            const response = NextResponse.redirect(errorUrl)
+    const url = request.nextUrl.clone()
+    const isAuthPage = url.pathname.startsWith('/login') ||
+        url.pathname.startsWith('/register') ||
+        url.pathname.startsWith('/signup')
+
+    const isPublicRoute = url.pathname.startsWith('/api/webhook') ||
+        url.pathname.startsWith('/_next') ||
+        url.pathname.startsWith('/favicon') ||
+        url.pathname.includes('.')
+
+    const isProtectedRoute = !isAuthPage && !isPublicRoute
+
+    // 1. Redirecionar não autenticados
+    if (!session && isProtectedRoute) {
+        url.pathname = '/login'
+        url.searchParams.set('redirect', request.nextUrl.pathname)
+        return NextResponse.redirect(url)
+    }
+
+    // 2. Redirecionar autenticados que tentam acessar login
+    if (session && isAuthPage) {
+        const redirect = request.nextUrl.searchParams.get('redirect')
+        if (redirect) {
+            return NextResponse.redirect(new URL(redirect, request.url))
+        }
+        return NextResponse.redirect(new URL('/', request.url))
+    }
+
+    // 3. 🔒 VALIDAÇÃO EXTRA: Verificar organization_id e status no banco
+    if (session && isProtectedRoute) {
+        // Ignorar verificação para a página de ativação pendente para evitar loop
+        if (url.pathname.startsWith('/pending-activation') || url.pathname.startsWith('/onboarding')) {
             return response
         }
 
-        const url = request.nextUrl.clone()
-        const isLoginPage = url.pathname === '/login' || url.pathname === '/register'
-        const isOnboardingPage = url.pathname.startsWith('/onboarding')
-        const isAuthRoute = url.pathname.startsWith('/auth')
-        const isPublicStatic = url.pathname.startsWith('/_next') || url.pathname.includes('.')
+        const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('organization_id, status')
+            .eq('id', session.user.id)
+            .single()
 
-        // 1. No Session: Redirect to Login
-        if (!session && !isLoginPage && !isAuthRoute && !isPublicStatic) {
-            url.pathname = '/login'
+        if (error || !profile?.organization_id) {
+            console.error('🚨 SECURITY: Usuário sem organization_id detectado ou erro no perfil')
+            // Removido o logout automático. Redirecionar para onboarding para completar o cadastro.
+            url.pathname = '/onboarding'
             return NextResponse.redirect(url)
         }
 
-        // 2. Has Session: Check User Status (Active vs Pending)
-        if (session && !isAuthRoute && !isPublicStatic) {
-
-            // Prevent logged in users from accessing login/register
-            if (isLoginPage) {
-                url.pathname = '/'
-                return NextResponse.redirect(url)
-            }
-
-            // Only perform DB check if we are navigating critical flows
-
-            // Fetch User Profile to check 'active' status
-            // Optimized: Read from JWT metadata to avoid DB hit on every request
-            const status = session.user.app_metadata?.status;
-            const organizationId = session.user.app_metadata?.organization_id;
-
-            // Default to PENDING if status not set (legacy users)
-            // If organization_id is missing, also treat as incomplete
-            const isActive = status === 'ACTIVE' && !!organizationId;
-
-            if (process.env.NODE_ENV === 'development') {
-                console.log('MIDDLEWARE DEBUG:', {
-                    userId: session.user.id,
-                    status,
-                    orgId: organizationId,
-                    isActive
-                })
-            }
-
-            // Logic A: Incomplete Onboarding (!active)
-            if (!isActive) {
-                // If NOT on onboarding page, force redirect
-                if (!isOnboardingPage) {
-                    const url = request.nextUrl.clone()
-                    url.pathname = '/onboarding'
-                    return NextResponse.redirect(url)
-                }
-                // If ON onboarding page, ALLOW (no action needed)
-            }
-
-            // Logic B: Complete Onboarding (active)
-            else {
-                // If trying to access onboarding again, redirect to Dashboard
-                if (isOnboardingPage) {
-                    const url = request.nextUrl.clone()
-                    url.pathname = '/'
-                    return NextResponse.redirect(url)
-                }
-            }
+        if (profile.status !== 'ACTIVE') {
+            // Se o status não for ACTIVE, redirecionar para onboarding ou pending-activation
+            url.pathname = '/onboarding'
+            return NextResponse.redirect(url)
         }
-
-        return response
-    } catch (e) {
-        console.error('MIDDLEWARE ERROR:', e)
-        return NextResponse.next({
-            request: {
-                headers: request.headers,
-            },
-        })
     }
+
+    return response
 }
 
 export const config = {
     matcher: [
-        /*
-         * Match all request paths except for the ones starting with:
-         * - _next/static (static files)
-         * - _next/image (image optimization files)
-         * - favicon.ico (favicon file)
-         * Feel free to modify this pattern to include more paths.
-         */
-        '/((?!_next/static|_next/image|favicon.ico).*)',
+        '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
     ],
 }

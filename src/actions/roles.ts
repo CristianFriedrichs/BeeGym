@@ -94,7 +94,7 @@ export async function createRoleAction(roleData: CreateRoleData) {
         metadata: { role_id: data.id, permissions: roleData.permissions },
     });
 
-    revalidatePath('/dashboard/settings/roles');
+    revalidatePath('/painel/configuracoes/roles');
     return { success: true, data };
 }
 
@@ -131,7 +131,7 @@ export async function updateRoleAction(roleId: string, roleData: UpdateRoleData)
         metadata: { role_id: roleId, changes: updatePayload },
     });
 
-    revalidatePath('/dashboard/settings/roles');
+    revalidatePath('/painel/configuracoes/roles');
     return { success: true, data };
 }
 
@@ -187,6 +187,6 @@ export async function deleteRoleAction(roleId: string) {
         metadata: { role_id: roleId },
     });
 
-    revalidatePath('/dashboard/settings/roles');
+    revalidatePath('/painel/configuracoes/roles');
     return { success: true };
 }

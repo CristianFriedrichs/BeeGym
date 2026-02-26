@@ -1,29 +1,28 @@
 'use client';
 import type { ReactNode } from "react";
-import { Sidebar } from "@/components/dashboard/sidebar";
-import { Header } from "@/components/dashboard/header";
-import { BottomBar } from "@/components/dashboard/bottom-bar";
+import { Sidebar } from "@/components/painel/sidebar";
+import { Header } from "@/components/painel/header";
+import { BottomBar } from "@/components/painel/bottom-bar";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { UnitProvider } from "@/context/UnitContext";
+import { StatusAutomator } from "@/components/global/status-automator";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const isConversationsPage = pathname.startsWith('/conversations');
-  const isSettingsPage = pathname.startsWith('/settings');
+  const isConversationsPage = pathname.startsWith('/conversas');
+  const isCalendarPage = pathname.startsWith('/agenda');
+  const isSettingsPage = pathname.startsWith('/configuracoes');
+  const isStudentProfilePage = pathname.startsWith('/alunos/') && pathname !== '/alunos';
 
   return (
     <UnitProvider>
-      <div className="flex h-screen w-full bg-background-light dark:bg-background-dark">
-        <Sidebar />
-        <div className="flex-1 flex flex-col h-screen overflow-hidden">
-          <Header />
-          <main className={cn(
-            "flex-1 flex flex-col",
-            isConversationsPage
-              ? 'overflow-hidden'
-              : 'overflow-y-auto p-6 md:p-8 pb-24 md:pb-8'
-          )}>
+      <StatusAutomator />
+      <div className="flex h-[100dvh] w-full bg-background-light dark:bg-background-dark overflow-hidden">
+        <Sidebar className="flex-shrink-0" />
+        <div className="flex-1 flex flex-col h-full overflow-hidden">
+          <Header className="flex-shrink-0" />
+          <main className="flex-1 flex flex-col p-6 md:p-8 overflow-y-auto overflow-x-hidden pb-20 md:pb-6 relative">
             {children}
           </main>
           <BottomBar />

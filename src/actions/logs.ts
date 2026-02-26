@@ -131,7 +131,7 @@ export async function createTestLogAction() {
         return { success: false, error: error.message };
     }
 
-    revalidatePath('/dashboard/settings/logs');
+    revalidatePath('/painel/configuracoes/logs');
     return { success: true };
 }
 

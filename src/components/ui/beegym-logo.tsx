@@ -1,6 +1,8 @@
 'use client';
 
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
+import { useState } from 'react';
 
 interface BeeGymLogoProps {
     variant?: 'light' | 'dark';
@@ -15,37 +17,49 @@ export function BeeGymLogo({
     showIcon = true,
     className
 }: BeeGymLogoProps) {
+    const [imgError, setImgError] = useState(false);
+
     const sizeClasses = {
-        sm: 'text-xl gap-1.5',
-        md: 'text-2xl gap-2',
-        lg: 'text-4xl gap-3',
+        sm: 'text-xl gap-2',
+        md: 'text-3xl gap-2.5',
+        lg: 'text-5xl gap-4',
     };
 
     const iconSizes = {
-        sm: 'h-6 w-6',
-        md: 'h-8 w-8',
-        lg: 'h-12 w-12',
+        sm: 'h-7 w-7',
+        md: 'h-10 w-10',
+        lg: 'h-16 w-16',
+    };
+
+    // Width estimates for the Image component (ratio ~3:1)
+    const dimensions = {
+        sm: { width: 80, height: 28 },
+        md: { width: 120, height: 40 },
+        lg: { width: 180, height: 60 },
     };
 
     return (
-        <div className={cn('flex items-center', sizeClasses[size], className)}>
-            {showIcon && (
-                <div className={cn('rounded-full bg-gradient-to-br from-bee-orange to-orange-600 flex items-center justify-center', iconSizes[size])}>
-                    <svg viewBox="0 0 24 24" fill="none" className="w-3/5 h-3/5">
-                        <path
-                            d="M12 2L15.5 8.5L22 9.5L17 14.5L18.5 21L12 17.5L5.5 21L7 14.5L2 9.5L8.5 8.5L12 2Z"
-                            fill="white"
-                            opacity="0.9"
-                        />
-                    </svg>
+        <div className={cn('flex items-center', className)}>
+            {!imgError ? (
+                <div className={cn('relative flex items-center', size === 'sm' ? 'h-6' : size === 'md' ? 'h-10' : 'h-16')}>
+                    <Image
+                        src={variant === 'dark' ? '/logo-white.png' : '/Logo Vertical.png'}
+                        alt="BeeGym"
+                        width={dimensions[size].width}
+                        height={dimensions[size].height}
+                        className="h-full w-auto object-contain"
+                        onError={() => setImgError(true)}
+                        priority
+                    />
+                </div>
+            ) : (
+                <div className={cn(
+                    "flex items-center justify-center bg-red-100 text-red-600 border border-red-500 font-bold rounded px-2 text-center",
+                    size === 'sm' ? 'h-6 text-[10px]' : size === 'md' ? 'h-10 text-xs' : 'h-16 text-sm'
+                )}>
+                    Salve a imagem na pasta <br /> public/{variant === 'dark' ? 'logo-white.png' : 'Logo Vertical.png'}
                 </div>
             )}
-            <span className="font-display font-bold tracking-tight">
-                <span className="text-bee-orange">Bee</span>
-                <span className={variant === 'dark' ? 'text-pure-white' : 'text-deep-midnight'}>
-                    Gym
-                </span>
-            </span>
         </div>
     );
 }

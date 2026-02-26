@@ -1,17 +1,18 @@
 import type { Metadata } from 'next';
-import { Quicksand, Roboto } from 'next/font/google';
+import { Poppins, Roboto } from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from '@/lib/utils';
 import { validateEnv } from '@/lib/env';
+import { AuthProvider } from '@/lib/auth/AuthContext';
 
 // Validate env vars at startup
 validateEnv();
 
-const quicksand = Quicksand({
+const poppins = Poppins({
   subsets: ['latin'],
   variable: '--font-display',
-  weight: ['700'],
+  weight: ['400', '500', '600', '700', '800', '900'],
 });
 
 const roboto = Roboto({
@@ -31,14 +32,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" suppressHydrationWarning>
-      <body className={cn(
-        "transition-colors duration-200 antialiased",
-        quicksand.variable,
-        roboto.variable
-      )}>
-        {children}
-        <Toaster />
+    <html
+      lang="pt-BR"
+      className={cn(poppins.variable, roboto.variable)}
+      suppressHydrationWarning
+    >
+      <body className="antialiased" suppressHydrationWarning>
+        <AuthProvider>
+          {children}
+          <Toaster />
+        </AuthProvider>
       </body>
     </html>
   );

@@ -14,6 +14,7 @@ export type KPI = {
 }
 
 export type ScheduleItem = {
+    id: string; // Added for unique keys
     time: string;
     name: string;
     type: string;
@@ -23,6 +24,14 @@ export type ScheduleItem = {
     statusColor: string;
     classType: 'individual' | 'group' | 'open';
     date: Date; // Added for correct sorting/filtering
+    title?: string; // Optional title override
+    template?: {
+        icon?: string;
+        color?: string;
+        title?: string;
+    };
+    enrollmentCount?: number;
+    numericCapacity?: number;
 }
 
 export type Alert = {
@@ -166,6 +175,7 @@ export async function getUpcomingClasses(organizationId?: string): Promise<Sched
             const instructor = event.instructors || {};
 
             return {
+                id: event.id, // Added ID
                 time: format(startTime, 'HH:mm'), // Formata para hora:min
                 name: template.title || 'Sem título',
                 type: event.type || 'AULA',
@@ -211,7 +221,7 @@ export async function getAlerts(unitId?: string): Promise<Alert[]> {
                 iconName: 'UserX',
                 color: 'yellow',
                 action: 'Ver Lista',
-                href: '/dashboard/clients'
+                href: '/painel/alunos'
             });
         }
 

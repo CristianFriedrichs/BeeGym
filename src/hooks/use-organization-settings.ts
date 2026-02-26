@@ -40,23 +40,23 @@ export function useOrganizationSettings() {
                 }
 
                 // Get user's organization_id from profiles
-                const { data: userData } = await supabase
+                const { data: userData } = await (supabase as any)
                     .from('profiles')
                     .select('organization_id')
                     .eq('id', user.id)
                     .single();
 
-                if (!userData?.organization_id) {
+                if (!(userData as any)?.organization_id) {
                     setError('Organization not found');
                     setIsLoading(false);
                     return;
                 }
 
                 // Fetch organization settings
-                const { data: orgData, error: orgError } = await supabase
+                const { data: orgData, error: orgError } = await (supabase as any)
                     .from('organizations')
                     .select('opening_hours')
-                    .eq('id', userData.organization_id as string)
+                    .eq('id', (userData as any).organization_id as string)
                     .single();
 
                 if (orgError) throw orgError;

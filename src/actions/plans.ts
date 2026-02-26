@@ -76,7 +76,7 @@ export async function createPlanAction(formData: {
         metadata: { plan_id: data.id, ...formData },
     });
 
-    revalidatePath('/dashboard/settings/plans');
+    revalidatePath('/painel/configuracoes/plans');
     return { success: true, data };
 }
 
@@ -133,7 +133,7 @@ export async function updatePlanAction(planId: string, formData: any) {
         metadata: { plan_id: planId, changes: formData },
     });
 
-    revalidatePath('/dashboard/settings/plans');
+    revalidatePath('/painel/configuracoes/plans');
     return { success: true };
 }
 
@@ -159,7 +159,7 @@ export async function togglePlanStatusAction(planId: string, active: boolean) {
         metadata: { plan_id: planId, active },
     });
 
-    revalidatePath('/dashboard/settings/plans');
+    revalidatePath('/painel/configuracoes/plans');
     return { success: true };
 }
 

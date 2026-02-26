@@ -49,7 +49,7 @@ export default function RegisterPage() {
 
         try {
             // 1. Sign Up
-            const { error } = await supabase.auth.signUp({
+            const { data, error } = await supabase.auth.signUp({
                 email: formData.email,
                 password: formData.password,
                 options: {
@@ -63,12 +63,23 @@ export default function RegisterPage() {
 
             if (error) throw error
 
-            toast({
-                title: 'Conta criada com sucesso!',
-                description: 'Redirecionando para configuração...',
-            })
+            if (data.session) {
+                toast({
+                    title: 'Conta criada com sucesso!',
+                    description: 'Redirecionando para configuração...',
+                })
 
-            router.push('/onboarding')
+                // Use window.location.assign for robust cookie propagation to middleware
+                window.location.assign('/onboarding')
+            } else {
+                toast({
+                    title: 'Conta criada!',
+                    description: 'Por favor, verifique seu e-mail para ativar sua conta.',
+                })
+
+                router.push('/login')
+            }
+
         } catch (error: any) {
             toast({
                 variant: 'destructive',

@@ -182,7 +182,9 @@ export default function OnboardingStep2() {
                             <div className="space-y-2">
                                 <Label>Tipo de Documento *</Label>
                                 <Select value={formData.documentType} onValueChange={(v) => handleSelectChange('documentType', v)}>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectTrigger className="h-10 text-[11px] font-bold uppercase tracking-wider border-slate-100 bg-white shadow-sm rounded-lg focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200">
+                                        <SelectValue />
+                                    </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="CPF">CPF</SelectItem>
                                         <SelectItem value="CNPJ">CNPJ</SelectItem>
@@ -229,14 +231,15 @@ export default function OnboardingStep2() {
                         <div className="space-y-2">
                             <Label>Número de Alunos *</Label>
                             <Select value={formData.studentRange} onValueChange={(v) => handleSelectChange('studentRange', v)}>
-                                <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                                <SelectTrigger className="h-10 text-[11px] font-bold uppercase tracking-wider border-slate-100 bg-white shadow-sm rounded-lg focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200">
+                                    <SelectValue placeholder="Selecione..." />
+                                </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="0-20">0 - 20</SelectItem>
-                                    <SelectItem value="21-40">21 - 40</SelectItem>
-                                    <SelectItem value="41-60">41 - 60</SelectItem>
-                                    <SelectItem value="61-300">61 - 300</SelectItem>
-                                    <SelectItem value="301-500">301 - 500</SelectItem>
-                                    <SelectItem value="500+">Acima de 500</SelectItem>
+                                    <SelectItem value="1-20">1 a 20</SelectItem>
+                                    <SelectItem value="21-40">21 a 40</SelectItem>
+                                    <SelectItem value="41-100">41 a 100</SelectItem>
+                                    <SelectItem value="101-400">101 a 400</SelectItem>
+                                    <SelectItem value="400+">Acima de 400</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>

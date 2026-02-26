@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
@@ -77,7 +78,34 @@ export async function completeOnboardingAction(data: CompleteOnboardingData) {
         return { error: `Erro ao atualizar perfil do usuário: ${userError.message}` }
     }
 
-    // 3. Revalidate and Return
+    // 3. Update Auth Metadata (Critical for Middleware)
+    const supabaseAdmin = createAdminClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        {
+            auth: {
+                autoRefreshToken: false,
+                persistSession: false
+            }
+        }
+    )
+
+    const { error: metadataError } = await supabaseAdmin.auth.admin.updateUserById(
+        user.id,
+        {
+            app_metadata: {
+                organization_id: orgData.id,
+                status: 'ACTIVE'
+            }
+        }
+    )
+
+    if (metadataError) {
+        console.error('Error updating user metadata:', metadataError)
+        // We don't block success here, but log it. Middleware might need a refresh.
+    }
+
+    // 4. Revalidate and Return
     revalidatePath('/')
     return { success: true }
 }

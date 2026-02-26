@@ -68,7 +68,7 @@ export async function requirePermission(
  * Retorna permissões padrão baseadas no UserRole
  */
 function getDefaultPermissionsForRole(role: string): Permissions {
-    switch (role) {
+    switch (role?.toUpperCase()) {
         case 'OWNER':
         case 'ADMIN':
             return FULL_PERMISSIONS;

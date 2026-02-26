@@ -11,18 +11,28 @@ export type Client = {
     status: 'active' | 'overdue' | 'inactive';
     avatar: string | null;
     primaryUnitId: string;
+    lastActivity: string | null;
 }
 
 export async function getClients(unitId?: string, search?: string): Promise<Client[]> {
     const supabase = createClient();
+
+    // Opcional: Atualizar status das aulas antes de buscar
+    // @ts-ignore
+    await supabase.rpc('update_finished_classes_status');
 
     let query = supabase
         .from('students')
         .select(`
             id,
             full_name,
+            email,
             status,
-            organization_id
+            organization_id,
+            plan,
+            objective,
+            avatar_url,
+            last_activity
         `);
 
     if (unitId) {
@@ -54,11 +64,12 @@ function mapStudentToClient(student: any): Client {
     return {
         id: student.id,
         name: student.full_name,
-        email: '',
-        objetivo: 'Não informado',
-        plan: 'Sem Plano',
+        email: student.email || '',
+        objetivo: student.objective || 'Não informado',
+        plan: student.plan || 'Sem Plano',
         status: student.status === 'ACTIVE' ? 'active' : student.status === 'INACTIVE' ? 'inactive' : 'overdue',
-        avatar: null,
-        primaryUnitId: ''
+        avatar: student.avatar_url || null,
+        primaryUnitId: '',
+        lastActivity: student.last_activity || null
     };
 }

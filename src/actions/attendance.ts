@@ -88,6 +88,6 @@ export async function updateFrequencySettingsAction(settings: Partial<FrequencyS
         return { success: false, error: error.message };
     }
 
-    revalidatePath('/dashboard/settings/attendance');
+    revalidatePath('/painel/configuracoes/attendance');
     return { success: true };
 }

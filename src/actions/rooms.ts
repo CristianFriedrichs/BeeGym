@@ -34,7 +34,7 @@ export async function createRoomAction(formData: {
         metadata: { room_id: data.id, ...formData },
     });
 
-    revalidatePath('/dashboard/settings/rooms');
+    revalidatePath('/painel/configuracoes/rooms');
     return { success: true, data };
 }
 
@@ -65,7 +65,7 @@ export async function updateRoomAction(roomId: string, formData: {
         metadata: { room_id: roomId, changes: formData },
     });
 
-    revalidatePath('/dashboard/settings/rooms');
+    revalidatePath('/painel/configuracoes/rooms');
     return { success: true };
 }
 
@@ -91,6 +91,6 @@ export async function deleteRoomAction(roomId: string) {
         metadata: { room_id: roomId },
     });
 
-    revalidatePath('/dashboard/settings/rooms');
+    revalidatePath('/painel/configuracoes/rooms');
     return { success: true };
 }

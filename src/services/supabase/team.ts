@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/client';
 export async function getTeamMembers(organizationId: string) {
     const supabase = createClient();
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
         .from('profiles')
         .select('id, full_name, email, role, avatar_url, status, phone')
         .eq('organization_id', organizationId)
@@ -18,7 +18,7 @@ export async function updateMemberRole(userId: string, role: string, hasSystemAc
 
     // Se 'hasSystemAccess' for falso, poderíamos marcar como inativo 
     // ou apenas mudar o role para algo com zero permissões.
-    const { error } = await supabase
+    const { error } = await (supabase as any)
         .from('profiles')
         .update({
             role,

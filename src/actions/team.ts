@@ -154,7 +154,7 @@ export async function createTeamMemberAction(formData: {
             },
         });
 
-        revalidatePath('/dashboard/settings/team');
+        revalidatePath('/painel/configuracoes/team');
         return { success: true, data: { id: profileId } };
     } catch (error: any) {
         console.error('Unexpected error in createTeamMemberAction:', error);
@@ -231,7 +231,7 @@ export async function updateTeamMemberAction(formData: {
             },
         });
 
-        revalidatePath('/dashboard/settings/team');
+        revalidatePath('/painel/configuracoes/team');
         return { success: true };
     } catch (error: any) {
         console.error('Unexpected error in updateTeamMemberAction:', error);

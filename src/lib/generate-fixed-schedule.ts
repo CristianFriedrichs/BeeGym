@@ -60,7 +60,7 @@ export async function generateFixedScheduleEvents(
         }
 
         // Bulk insert all events
-        const { error, data } = await supabase
+        const { error, data } = await (supabase as any)
             .from('calendar_events')
             .insert(events)
             .select();
@@ -119,7 +119,7 @@ export async function deleteFixedScheduleEvents(
     const today = format(new Date(), 'yyyy-MM-dd');
 
     try {
-        const { error, data } = await supabase
+        const { error, data } = await (supabase as any)
             .from('calendar_events')
             .delete()
             .eq('student_id', studentId)

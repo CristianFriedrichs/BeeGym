@@ -1,0 +1,255 @@
+﻿src/app/(main)/conversas/page.tsx(127,51): error TS2339: Property 'chat_id' does not exist on type 'never'.
+src/app/(main)/conversas/page.tsx(140,45): error TS2339: Property 'chat_id' does not exist on type 'never'.
+src/app/(main)/conversas/page.tsx(148,22): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "14.1"; }, never, never, null, "chats", never, "POST">', gave the following error.
+    Argument of type '{ organization_id: any; }' is not assignable to parameter of type 'never'.
+  Overload 2 of 2, '(values: never[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "14.1"; }, never, never, null, "chats", never, "POST">', gave the following error.
+    Object literal may only specify known properties, and 'organization_id' does not exist in type 'never[]'.
+src/app/(main)/conversas/page.tsx(148,57): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/app/(main)/conversas/page.tsx(152,34): error TS2339: Property 'id' does not exist on type 'never'.
+src/app/(main)/conversas/page.tsx(154,65): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "14.1"; }, never, never, null, "chat_participants", never, "POST">', gave the following error.
+    Argument of type '{ chat_id: any; participant_id: any; participant_type: any; }[]' is not assignable to parameter of type 'never'.
+src/app/(main)/conversas/page.tsx(178,57): error TS2345: Argument of type '{ unread_count: number; }' is not assignable to parameter of type 'never'.
+src/app/(main)/conversas/page.tsx(215,92): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "14.1"; }, never, never, null, "chat_messages", never, "POST">', gave the following error.
+    Argument of type '{ chat_id: any; sender_id: any; sender_type: string; content: string; message_type: "TEXT" | "AUDIO"; media_url: string | null; }' is not assignable to parameter of type 'never'.
+  Overload 2 of 2, '(values: never[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "14.1"; }, never, never, null, "chat_messages", never, "POST">', gave the following error.
+    Object literal may only specify known properties, and 'chat_id' does not exist in type 'never[]'.
+src/app/(main)/conversas/page.tsx(234,49): error TS2345: Argument of type '{ updated_at: string; last_message_content: string; }' is not assignable to parameter of type 'never'.
+src/app/(main)/conversas/page.tsx(271,92): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "14.1"; }, never, never, null, "chat_messages", never, "POST">', gave the following error.
+    Argument of type '{ chat_id: any; sender_id: any; sender_type: string; content: string; message_type: "IMAGE" | "FILE"; media_url: string; }' is not assignable to parameter of type 'never'.
+  Overload 2 of 2, '(values: never[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "14.1"; }, never, never, null, "chat_messages", never, "POST">', gave the following error.
+    Object literal may only specify known properties, and 'chat_id' does not exist in type 'never[]'.
+src/app/(main)/conversas/page.tsx(288,49): error TS2345: Argument of type '{ updated_at: string; last_message_content: string; }' is not assignable to parameter of type 'never'.
+src/app/(main)/reports/page.tsx(717,34): error TS2304: Cannot find name 'Loader2'.
+src/app/(main)/settings/attendance/page.tsx(104,34): error TS2304: Cannot find name 'Calendar'.
+src/app/(main)/settings/attendance/page.tsx(194,34): error TS2304: Cannot find name 'AlertCircle'.
+src/app/(main)/settings/attendance/page.tsx(252,34): error TS2304: Cannot find name 'TrendingUp'.
+src/app/(main)/settings/general/page.tsx(141,31): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/app/(main)/settings/general/page.tsx(143,34): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/app/(main)/settings/general/page.tsx(148,39): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/app/(main)/settings/general/page.tsx(219,25): error TS2345: Argument of type '{ logo_url: string; }' is not assignable to parameter of type 'never'.
+src/app/(main)/settings/general/page.tsx(250,25): error TS2345: Argument of type '{ name: string; description: string | undefined; website: string | undefined; instagram: string; schedule: { sunday: { active: boolean; start: string; end: string; }; monday: { active: boolean; start: string; end: string; }; ... 5 more ...; holidays: { active: boolean; start: string; end: string; }; }; }' is not assignable to parameter of type 'never'.
+src/app/(main)/settings/profile/page.tsx(51,44): error TS2339: Property 'avatar_url' does not exist on type 'never'.
+src/app/(main)/settings/profile/page.tsx(56,42): error TS2339: Property 'full_name' does not exist on type 'never'.
+src/app/(main)/settings/profile/page.tsx(57,51): error TS2339: Property 'job_title' does not exist on type 'never'.
+src/app/(main)/settings/profile/page.tsx(58,37): error TS2339: Property 'bio' does not exist on type 'never'.
+src/app/(main)/settings/profile/page.tsx(60,51): error TS2339: Property 'show_public_profile' does not exist on type 'never'.
+src/app/(main)/settings/profile/page.tsx(100,25): error TS2345: Argument of type '{ avatar_url: string; }' is not assignable to parameter of type 'never'.
+src/app/(main)/settings/profile/page.tsx(135,25): error TS2345: Argument of type '{ full_name: string; job_title: string; bio: string; show_public_profile: boolean; }' is not assignable to parameter of type 'never'.
+src/app/(main)/students/[id]/workouts/page.tsx(146,17): error TS2322: Type '{ open: boolean; onOpenChange: Dispatch<SetStateAction<boolean>>; studentId: string; onSuccess: () => Promise<void>; }' is not assignable to type 'IntrinsicAttributes & WorkoutModalProps'.
+  Property 'studentId' does not exist on type 'IntrinsicAttributes & WorkoutModalProps'.
+src/app/(main)/workouts/page.tsx(107,48): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/app/(main)/workouts/page.tsx(123,48): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/app/auth/callback/route.ts(21,28): error TS7006: Parameter 'cookiesToSet' implicitly has an 'any' type.
+src/app/auth/callback/route.ts(23,53): error TS7031: Binding element 'name' implicitly has an 'any' type.
+src/app/auth/callback/route.ts(23,59): error TS7031: Binding element 'value' implicitly has an 'any' type.
+src/app/auth/callback/route.ts(23,66): error TS7031: Binding element 'options' implicitly has an 'any' type.
+src/components/dashboard/clients/new/steps/plan-step.tsx(60,24): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/components/dashboard/clients/new/steps/plan-step.tsx(66,43): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/components/dashboard/clients/new/steps/scheduling-step.tsx(167,22): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/components/dashboard/clients/new/steps/scheduling-step.tsx(191,10): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "14.1"; }, never, never, null, "students", never, "POST">', gave the following error.
+    Argument of type '{ full_name: string; email: string; phone: string; cpf: string; birth_date: string | null; address_street: string; address_number: string; address_complement: string | undefined; address_neighborhood: string; ... 8 more ...; scheduling_mode: string; }' is not assignable to parameter of type 'never'.
+  Overload 2 of 2, '(values: never[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "14.1"; }, never, never, null, "students", never, "POST">', gave the following error.
+    Object literal may only specify known properties, and 'full_name' does not exist in type 'never[]'.
+src/components/dashboard/clients/new/steps/scheduling-step.tsx(204,37): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/components/dashboard/clients/new/steps/scheduling-step.tsx(219,10): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "14.1"; }, never, never, null, any, never, "POST">', gave the following error.
+    Argument of type '{ student_id: any; plan_id: string; organization_id: any; due_date: string; discount_type: "PERCENT" | "ABSOLUTE"; discount_value: number; status: string; }' is not assignable to parameter of type 'never'.
+  Overload 2 of 2, '(values: never[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "14.1"; }, never, never, null, any, never, "POST">', gave the following error.
+    Object literal may only specify known properties, and 'student_id' does not exist in type 'never[]'.
+src/components/dashboard/clients/new/steps/scheduling-step.tsx(220,31): error TS2339: Property 'id' does not exist on type 'never'.
+src/components/dashboard/clients/new/steps/scheduling-step.tsx(222,37): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/components/dashboard/clients/new/steps/scheduling-step.tsx(234,30): error TS2339: Property 'id' does not exist on type 'never'.
+src/components/dashboard/clients/new/steps/scheduling-step.tsx(235,36): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/components/dashboard/header.tsx(175,36): error TS2339: Property 'avatar_url' does not exist on type 'never'.
+src/components/dashboard/header.tsx(181,33): error TS2339: Property 'full_name' does not exist on type 'never'.
+src/components/dashboard/header.tsx(183,29): error TS2339: Property 'email' does not exist on type 'never'.
+src/components/dashboard/header.tsx(188,24): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/components/dashboard/header.tsx(192,34): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/components/dashboard/header.tsx(196,30): error TS2339: Property 'name' does not exist on type 'never'.
+src/components/dashboard/live-class-card.tsx(101,31): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/components/dashboard/live-class-card.tsx(102,48): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/components/dashboard/live-class-card.tsx(178,25): error TS2345: Argument of type '{ status: string; confirmed_by_user: string; }' is not assignable to parameter of type 'never'.
+src/components/dashboard/modals/create-recurring-class-modal.tsx(137,28): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/components/dashboard/modals/create-recurring-class-modal.tsx(143,49): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/components/dashboard/modals/create-recurring-class-modal.tsx(152,49): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/components/dashboard/modals/create-recurring-class-modal.tsx(158,27): error TS2339: Property 'id' does not exist on type 'never'.
+src/components/dashboard/modals/create-recurring-class-modal.tsx(159,34): error TS2339: Property 'name' does not exist on type 'never'.
+src/components/dashboard/modals/create-recurring-class-modal.tsx(259,28): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/components/dashboard/modals/create-recurring-class-modal.tsx(301,47): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/components/dashboard/modals/create-recurring-class-modal.tsx(322,49): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/components/dashboard/modals/create-recurring-class-modal.tsx(337,34): error TS2339: Property 'status' does not exist on type 'never'.
+src/components/dashboard/modals/create-recurring-class-modal.tsx(338,35): error TS2339: Property 'start_datetime' does not exist on type 'never'.
+src/components/dashboard/modals/create-recurring-class-modal.tsx(338,63): error TS2339: Property 'end_datetime' does not exist on type 'never'.
+src/components/dashboard/modals/create-recurring-class-modal.tsx(340,61): error TS2339: Property 'start_datetime' does not exist on type 'never'.
+src/components/dashboard/modals/create-recurring-class-modal.tsx(341,59): error TS2339: Property 'end_datetime' does not exist on type 'never'.
+src/components/dashboard/modals/create-recurring-class-modal.tsx(348,51): error TS2339: Property 'room_id' does not exist on type 'never'.
+src/components/dashboard/modals/create-recurring-class-modal.tsx(350,70): error TS2339: Property 'title' does not exist on type 'never'.
+src/components/dashboard/modals/create-recurring-class-modal.tsx(353,38): error TS2339: Property 'instructor_id' does not exist on type 'never'.
+src/components/dashboard/modals/create-recurring-class-modal.tsx(355,75): error TS2339: Property 'title' does not exist on type 'never'.
+src/components/dashboard/modals/create-recurring-class-modal.tsx(378,25): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "14.1"; }, never, never, null, "calendar_events", never, "POST">', gave the following error.
+    Argument of type '{ title: string; room_id: string | null; instructor_id: string; organization_id: any; start_datetime: string; end_datetime: string; capacity: number; status: string; type: string; }[]' is not assignable to parameter of type 'never'.
+  Overload 2 of 2, '(values: never[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "14.1"; }, never, never, null, "calendar_events", never, "POST">', gave the following error.
+    Argument of type '{ title: string; room_id: string | null; instructor_id: string; organization_id: any; start_datetime: string; end_datetime: string; capacity: number; status: string; type: string; }[]' is not assignable to parameter of type 'never[]'.
+      Type '{ title: string; room_id: string | null; instructor_id: string; organization_id: any; start_datetime: string; end_datetime: string; capacity: number; status: string; type: string; }' is not assignable to type 'never'.
+src/components/dashboard/modals/event-details-modal.tsx(171,27): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/components/dashboard/modals/event-details-modal.tsx(192,46): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/components/dashboard/modals/event-details-modal.tsx(315,25): error TS2345: Argument of type '{ status: string; }' is not assignable to parameter of type 'never'.
+src/components/dashboard/modals/event-details-modal.tsx(345,25): error TS2345: Argument of type '{ status: string; }' is not assignable to parameter of type 'never'.
+src/components/dashboard/modals/manage-participants-modal.tsx(116,28): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/components/dashboard/modals/manage-participants-modal.tsx(121,49): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/components/dashboard/modals/manage-participants-modal.tsx(143,84): error TS2345: Argument of type '{ p_event_id: string; p_student_id: string; }' is not assignable to parameter of type 'undefined'.
+src/components/dashboard/modals/manage-participants-modal.tsx(186,89): error TS2345: Argument of type '{ p_event_id: string; p_student_id: string; }' is not assignable to parameter of type 'undefined'.
+src/components/dashboard/modals/new-class-modal.tsx(121,28): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/components/dashboard/modals/new-class-modal.tsx(127,49): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/components/dashboard/modals/new-class-modal.tsx(140,49): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/components/dashboard/modals/new-class-modal.tsx(203,28): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/components/dashboard/modals/new-class-modal.tsx(218,47): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/components/dashboard/modals/new-training-modal.tsx(138,28): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/components/dashboard/modals/new-training-modal.tsx(140,131): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/components/dashboard/modals/new-training-modal.tsx(143,134): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/components/dashboard/modals/new-training-modal.tsx(146,130): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/components/dashboard/modals/new-training-modal.tsx(147,59): error TS2698: Spread types may only be created from object types.
+src/components/dashboard/modals/new-training-modal.tsx(147,77): error TS2339: Property 'capacity' does not exist on type 'never'.
+src/components/dashboard/modals/new-training-modal.tsx(293,28): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/components/dashboard/modals/new-training-modal.tsx(311,47): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/components/dashboard/modals/new-training-modal.tsx(318,78): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "14.1"; }, never, never, null, any, never, "POST">', gave the following error.
+    Argument of type '{ scheduled_at: string; end_time: string; recurrence_id: string | undefined; title: string; type: string; status: string; student_id: string; organization_id: any; is_makeup: boolean; credit_cost: number; }' is not assignable to parameter of type 'never'.
+  Overload 2 of 2, '(values: never[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "14.1"; }, never, never, null, any, never, "POST">', gave the following error.
+    Object literal may only specify known properties, and 'scheduled_at' does not exist in type 'never[]'.
+src/components/dashboard/modals/new-training-modal.tsx(325,28): error TS2304: Cannot find name 'data'.
+src/components/dashboard/modals/new-training-modal.tsx(339,100): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "14.1"; }, never, never, null, "workout_exercises", never, "POST">', gave the following error.
+    Argument of type '{ workout_id: string; exercise_id: string | null; sets: number; reps: string; weight: string; notes: string; }[]' is not assignable to parameter of type 'never'.
+  Overload 2 of 2, '(values: never[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "14.1"; }, never, never, null, "workout_exercises", never, "POST">', gave the following error.
+    Argument of type '{ workout_id: string; exercise_id: string | null; sets: number; reps: string; weight: string; notes: string; }[]' is not assignable to parameter of type 'never[]'.
+      Type '{ workout_id: string; exercise_id: string | null; sets: number; reps: string; weight: string; notes: string; }' is not assignable to type 'never'.
+src/components/dashboard/modals/new-training-modal.tsx(361,89): error TS2345: Argument of type '{ scheduled_at: string; end_time: string; title: string; type: string; status: string; student_id: string; organization_id: any; is_makeup: boolean; credit_cost: number; }' is not assignable to parameter of type 'never'.
+src/components/dashboard/modals/new-training-modal.tsx(383,47): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/components/dashboard/modals/new-training-modal.tsx(397,85): error TS2345: Argument of type '{ start_datetime: string; end_datetime: string; type: string; capacity: null; title: string; instructor_id: string; room_id: string | null; address: string | null; organization_id: any; status: string; }' is not assignable to parameter of type 'never'.
+src/components/dashboard/modals/new-training-modal.tsx(401,114): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "14.1"; }, never, never, null, "calendar_events", never, "POST">', gave the following error.
+    Argument of type '{ start_datetime: string; end_datetime: string; type: string; capacity: null; title: string; instructor_id: string; room_id: string | null; address: string | null; organization_id: any; status: string; }' is not assignable to parameter of type 'never'.
+  Overload 2 of 2, '(values: never[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "14.1"; }, never, never, null, "calendar_events", never, "POST">', gave the following error.
+    Argument of type '{ start_datetime: string; end_datetime: string; type: string; capacity: null; title: string; instructor_id: string; room_id: string | null; address: string | null; organization_id: any; status: string; }' is not assignable to parameter of type 'never[]'.
+      Type '{ start_datetime: string; end_datetime: string; type: string; capacity: null; title: string; instructor_id: string; room_id: string | null; address: string | null; organization_id: any; status: string; }' is missing the following properties from type 'never[]': length, pop, push, concat, and 35 more.
+src/components/dashboard/modals/new-training-modal.tsx(406,49): error TS2339: Property 'id' does not exist on type 'never'.
+src/components/dashboard/modals/new-training-modal.tsx(408,55): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/components/dashboard/modals/new-workout-modal.tsx(85,52): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/components/dashboard/modals/new-workout-modal.tsx(94,29): error TS2339: Property 'name' does not exist on type 'never'.
+src/components/dashboard/modals/new-workout-modal.tsx(95,39): error TS2339: Property 'muscle_group' does not exist on type 'never'.
+src/components/dashboard/modals/new-workout-modal.tsx(96,30): error TS2339: Property 'muscle_group' does not exist on type 'never'.
+src/components/dashboard/modals/new-workout-modal.tsx(126,62): error TS2339: Property 'name' does not exist on type 'never'.
+src/components/dashboard/modals/new-workout-modal.tsx(126,70): error TS2339: Property 'id' does not exist on type 'never'.
+src/components/dashboard/modals/session-manager-modal.tsx(115,70): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "14.1"; }, never, never, null, "exercises", never, "POST">', gave the following error.
+    Argument of type '{ name: string; muscle_group: string; organization_id: string | null; }' is not assignable to parameter of type 'never'.
+  Overload 2 of 2, '(values: never[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "14.1"; }, never, never, null, "exercises", never, "POST">', gave the following error.
+    Object literal may only specify known properties, and 'name' does not exist in type 'never[]'.
+src/components/dashboard/modals/session-manager-modal.tsx(119,44): error TS2339: Property 'id' does not exist on type 'never'.
+src/components/dashboard/modals/session-manager-modal.tsx(120,74): error TS2339: Property 'name' does not exist on type 'never'.
+src/components/dashboard/modals/session-manager-modal.tsx(146,74): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "14.1"; }, never, never, null, "workout_logs", never, "POST">', gave the following error.
+    Argument of type '{ event_id: string; student_id: string; exercise_id: string; sets: number; reps: string; notes: string; }[]' is not assignable to parameter of type 'never'.
+  Overload 2 of 2, '(values: never[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "14.1"; }, never, never, null, "workout_logs", never, "POST">', gave the following error.
+    Argument of type '{ event_id: string; student_id: string; exercise_id: string; sets: number; reps: string; notes: string; }[]' is not assignable to parameter of type 'never[]'.
+      Type '{ event_id: string; student_id: string; exercise_id: string; sets: number; reps: string; notes: string; }' is not assignable to type 'never'.
+src/components/dashboard/modals/session-manager-modal.tsx(163,90): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/components/dashboard/modals/session-manager-modal.tsx(167,107): error TS2345: Argument of type '{ p_student_id: string; p_amount: number; }' is not assignable to parameter of type 'undefined'.
+src/components/dashboard/modals/session-manager-modal.tsx(184,77): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/components/dashboard/modals/session-manager-modal.tsx(212,77): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/components/dashboard/modals/session-manager-modal.tsx(228,77): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/components/payments/new-payment-modal.tsx(85,27): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/components/payments/new-payment-modal.tsx(131,27): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/components/payments/payment-sheet.tsx(47,66): error TS2345: Argument of type '{ status: string; }' is not assignable to parameter of type 'never'.
+src/components/payments/payment-sheet.tsx(55,66): error TS2345: Argument of type '{ due_date: string; }' is not assignable to parameter of type 'never'.
+src/components/payments/payment-sheet.tsx(63,66): error TS2345: Argument of type '{ status: string; paid_at: string; payment_method: string; interest_amount: number; penalty_amount: number; total_paid: number; }' is not assignable to parameter of type 'never'.
+src/components/settings/plans/plan-list.tsx(184,10): error TS2304: Cannot find name 'Card'.
+src/components/settings/plans/plan-list.tsx(185,14): error TS2304: Cannot find name 'CardHeader'.
+src/components/settings/plans/plan-list.tsx(188,26): error TS2304: Cannot find name 'CreditCard'.
+src/components/settings/plans/plan-list.tsx(191,26): error TS2304: Cannot find name 'CardTitle'.
+src/components/settings/plans/plan-list.tsx(191,130): error TS2304: Cannot find name 'CardTitle'.
+src/components/settings/plans/plan-list.tsx(201,15): error TS2304: Cannot find name 'CardHeader'.
+src/components/settings/plans/plan-list.tsx(203,14): error TS2304: Cannot find name 'CardContent'.
+src/components/settings/plans/plan-list.tsx(286,15): error TS2304: Cannot find name 'CardContent'.
+src/components/settings/plans/plan-list.tsx(313,11): error TS2304: Cannot find name 'Card'.
+src/components/settings/units/unit-list.tsx(142,10): error TS2304: Cannot find name 'Card'.
+src/components/settings/units/unit-list.tsx(143,14): error TS2304: Cannot find name 'CardHeader'.
+src/components/settings/units/unit-list.tsx(149,26): error TS2304: Cannot find name 'CardTitle'.
+src/components/settings/units/unit-list.tsx(149,133): error TS2304: Cannot find name 'CardTitle'.
+src/components/settings/units/unit-list.tsx(159,15): error TS2304: Cannot find name 'CardHeader'.
+src/components/settings/units/unit-list.tsx(161,14): error TS2304: Cannot find name 'CardContent'.
+src/components/settings/units/unit-list.tsx(256,15): error TS2304: Cannot find name 'CardContent'.
+src/components/settings/units/unit-list.tsx(304,11): error TS2304: Cannot find name 'Card'.
+src/components/students/create-measurement-modal.tsx(63,18): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "14.1"; }, never, never, null, any, never, "POST">', gave the following error.
+    Argument of type '{ student_id: string; organization_id: any; recorded_at: string; weight: number; height: number | null; body_fat: number | null; bmi: number | null; }' is not assignable to parameter of type 'never'.
+  Overload 2 of 2, '(values: never[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "14.1"; }, never, never, null, any, never, "POST">', gave the following error.
+    Object literal may only specify known properties, and 'student_id' does not exist in type 'never[]'.
+src/components/students/manage-plan-modal.tsx(103,53): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/components/students/manage-plan-modal.tsx(142,25): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/components/students/quick-message-modal.tsx(36,27): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/components/students/quick-message-modal.tsx(40,51): error TS2339: Property 'chat_id' does not exist on type 'never'.
+src/components/students/quick-message-modal.tsx(53,53): error TS2339: Property 'chat_id' does not exist on type 'never'.
+src/components/students/quick-message-modal.tsx(60,22): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "14.1"; }, never, never, null, "chats", never, "POST">', gave the following error.
+    Argument of type '{ organization_id: any; }' is not assignable to parameter of type 'never'.
+  Overload 2 of 2, '(values: never[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "14.1"; }, never, never, null, "chats", never, "POST">', gave the following error.
+    Object literal may only specify known properties, and 'organization_id' does not exist in type 'never[]'.
+src/components/students/quick-message-modal.tsx(60,56): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/components/students/quick-message-modal.tsx(64,34): error TS2339: Property 'id' does not exist on type 'never'.
+src/components/students/quick-message-modal.tsx(66,65): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "14.1"; }, never, never, null, "chat_participants", never, "POST">', gave the following error.
+    Argument of type '{ chat_id: any; participant_id: string; participant_type: string; }[]' is not assignable to parameter of type 'never'.
+src/components/students/quick-message-modal.tsx(73,78): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "14.1"; }, never, never, null, "chat_messages", never, "POST">', gave the following error.
+    Argument of type '{ chat_id: any; sender_id: string; sender_type: string; content: string; message_type: string; }' is not assignable to parameter of type 'never'.
+  Overload 2 of 2, '(values: never[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "14.1"; }, never, never, null, "chat_messages", never, "POST">', gave the following error.
+    Object literal may only specify known properties, and 'chat_id' does not exist in type 'never[]'.
+src/components/students/quick-message-modal.tsx(84,49): error TS2345: Argument of type '{ updated_at: string; last_message_content: string; }' is not assignable to parameter of type 'never'.
+src/components/students/student-modal.tsx(144,49): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/components/students/student-modal.tsx(168,27): error TS2339: Property 'app_roles' does not exist on type 'never'.
+src/components/students/student-modal.tsx(173,40): error TS2339: Property 'app_roles' does not exist on type 'never'.
+src/components/students/student-modal.tsx(269,43): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/components/students/student-modal.tsx(298,87): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/context/UnitContext.tsx(44,32): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/context/UnitContext.tsx(49,72): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/context/UnitContext.tsx(55,53): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/context/UnitContext.tsx(67,38): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/context/UnitContext.tsx(68,55): error TS2339: Property 'full_name' does not exist on type 'never'.
+src/context/UnitContext.tsx(71,51): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/context/UnitContext.tsx(76,30): error TS2322: Type 'any' is not assignable to type 'never'.
+src/context/UnitContext.tsx(104,62): error TS2339: Property 'id' does not exist on type 'never'.
+src/context/UnitContext.tsx(104,77): error TS2339: Property 'id' does not exist on type 'never'.
+src/context/UnitContext.tsx(108,59): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/hooks/use-capacity-check.ts(41,28): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/hooks/use-capacity-check.ts(45,36): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/hooks/use-organization-settings.ts(49,32): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/hooks/use-organization-settings.ts(59,40): error TS2339: Property 'organization_id' does not exist on type 'never'.
+src/hooks/use-organization-settings.ts(66,48): error TS2339: Property 'opening_hours' does not exist on type 'never'.
+src/lib/generate-fixed-schedule.ts(65,21): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "14.1"; }, never, never, null, "calendar_events", never, "POST">', gave the following error.
+    Argument of type 'any[]' is not assignable to parameter of type 'never'.
+  Overload 2 of 2, '(values: never[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "14.1"; }, never, never, null, "calendar_events", never, "POST">', gave the following error.
+    Argument of type 'any[]' is not assignable to parameter of type 'never[]'.
+      Type 'any' is not assignable to type 'never'.
+src/lib/supabase/server.ts(16,24): error TS7006: Parameter 'cookiesToSet' implicitly has an 'any' type.
+src/lib/supabase/server.ts(18,49): error TS7031: Binding element 'name' implicitly has an 'any' type.
+src/lib/supabase/server.ts(18,55): error TS7031: Binding element 'value' implicitly has an 'any' type.
+src/lib/supabase/server.ts(18,62): error TS7031: Binding element 'options' implicitly has an 'any' type.
+src/middleware.ts(21,28): error TS7006: Parameter 'cookiesToSet' implicitly has an 'any' type.
+src/middleware.ts(22,49): error TS7031: Binding element 'name' implicitly has an 'any' type.
+src/middleware.ts(22,55): error TS7031: Binding element 'value' implicitly has an 'any' type.
+src/middleware.ts(22,62): error TS7031: Binding element 'options' implicitly has an 'any' type.
+src/middleware.ts(28,49): error TS7031: Binding element 'name' implicitly has an 'any' type.
+src/middleware.ts(28,55): error TS7031: Binding element 'value' implicitly has an 'any' type.
+src/middleware.ts(28,62): error TS7031: Binding element 'options' implicitly has an 'any' type.
+src/services/supabase/student-profile.ts(266,17): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/services/supabase/team.ts(23,17): error TS2345: Argument of type '{ role: string; status: string; }' is not assignable to parameter of type 'never'.

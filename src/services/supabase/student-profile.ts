@@ -29,6 +29,7 @@ export type StudentProfileData = {
         height: number | null;
         weight: number | null;
     } | null;
+    date_of_birth: string | null;
 };
 
 export type EvolutionMetric = 'weight' | 'bmi' | 'body_fat' | 'muscle_mass';
@@ -47,7 +48,13 @@ export type FrequencyEvent = {
     event_type: 'CLASS' | 'TRAINING';
     class_template?: {
         name: string;
+        icon?: string;
+        color?: string;
     };
+    title?: string;
+    instructor?: string;
+    room?: string;
+    capacity?: number;
 };
 
 export type PaymentInvoice = {
@@ -72,15 +79,9 @@ export type ActiveWorkout = {
 export async function getStudentProfile(studentId: string): Promise<StudentProfileData | null> {
     const supabase = createClient();
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
         .from('students')
-        .select(`
-      id,
-      full_name,
-      status,
-      created_at,
-      organization_id
-    `)
+        .select('*')
         .eq('id', studentId)
         .single();
 
@@ -90,31 +91,34 @@ export async function getStudentProfile(studentId: string): Promise<StudentProfi
     }
 
     // Get latest physical assessment
-    const { data: assessmentData } = await supabase
-        .from('physical_assessments')
+    const { data: assessmentData } = await (supabase as any)
+        .from('student_measurements' as any)
         .select('height, weight')
         .eq('student_id', studentId)
         .order('recorded_at', { ascending: false })
         .limit(1)
         .maybeSingle();
 
+    const dataAny = data as any;
+
     return {
-        id: data.id,
-        full_name: data.full_name,
-        email: null,
-        phone: null,
-        avatar_url: null,
-        status: data.status as 'ACTIVE' | 'INACTIVE' | 'OVERDUE',
-        objective: null,
-        created_at: data.created_at || new Date().toISOString(),
+        id: dataAny.id,
+        full_name: dataAny.full_name,
+        email: dataAny.email,
+        phone: dataAny.phone,
+        avatar_url: dataAny.avatar_url,
+        status: dataAny.status as 'ACTIVE' | 'INACTIVE' | 'OVERDUE',
+        objective: dataAny.objective,
+        created_at: dataAny.created_at || new Date().toISOString(),
         unit_id: '',
-        organization_id: data.organization_id || '',
-        plan: null,
+        organization_id: dataAny.organization_id || '',
+        plan: dataAny.plan ? { id: '0', name: dataAny.plan, color: '#F97316', price: 0 } : null,
         unit: null,
-        latest_assessment: assessmentData ? {
-            height: assessmentData.height,
-            weight: assessmentData.weight,
+        latest_assessment: (assessmentData as any) ? {
+            height: (assessmentData as any).height,
+            weight: (assessmentData as any).weight,
         } : null,
+        date_of_birth: null, // Placeholder as column might not exist yet
     };
 }
 
@@ -136,8 +140,8 @@ export async function getStudentEvolution(
 
     const column = columnMap[metric];
 
-    const { data, error } = await supabase
-        .from('physical_assessments')
+    const { data, error } = await (supabase as any)
+        .from('student_measurements')
         .select(`recorded_at, ${column}`)
         .eq('student_id', studentId)
         .order('recorded_at', { ascending: true })
@@ -163,22 +167,27 @@ export async function getStudentFrequency(studentId: string): Promise<FrequencyE
     const supabase = createClient();
 
     // Note: This query uses attendance_logs!inner to filter by student frequency
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
         .from('calendar_events')
         .select(`
       id,
       start_datetime,
       end_datetime,
       status,
-      type,
-      class_templates (
-        title
-      ),
-      attendance_logs!inner (
+          type,
+          capacity,
+          rooms ( name ),
+          instructors ( name ),
+          class_templates (
+            title,
+            icon,
+            color
+          ),
+      event_enrollments!inner (
         student_id
       )
     `)
-        .eq('attendance_logs.student_id', studentId)
+        .eq('event_enrollments.student_id', studentId)
         .order('start_datetime', { ascending: false })
         .limit(5);
 
@@ -196,22 +205,28 @@ export async function getStudentFrequency(studentId: string): Promise<FrequencyE
         event_type: event.type === 'CLASS' ? 'CLASS' : 'TRAINING',
         class_template: event.class_templates ? {
             name: event.class_templates.title,
+            icon: event.class_templates.icon,
+            color: event.class_templates.color,
         } : undefined,
+        instructor: event.instructors?.name,
+        room: event.rooms?.name,
+        capacity: event.capacity,
+        title: event.class_templates?.title || event.title // Ensure title is available
     }));
 }
 
 /**
- * Busca últimos pagamentos do aluno (últimas 3 faturas)
+ * Busca últimos pagamentos do aluno
  */
-export async function getStudentPayments(studentId: string): Promise<PaymentInvoice[]> {
+export async function getStudentPayments(studentId: string, limit: number = 5): Promise<PaymentInvoice[]> {
     const supabase = createClient();
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
         .from('invoices')
         .select('id, amount, due_date, status, paid_at')
         .eq('student_id', studentId)
         .order('due_date', { ascending: false })
-        .limit(3);
+        .limit(limit);
 
     if (error || !data) {
         console.error('Error fetching student payments:', error);
@@ -246,10 +261,10 @@ export async function updateStudentStatus(
 ): Promise<boolean> {
     const supabase = createClient();
 
-    const { error } = await supabase
-        .from('students')
-        .update({ status: status as any })
-        .eq('id', studentId);
+    const { error } = await ((supabase as any)
+        .from('students' as any)
+        .update({ status: status as any } as any)
+        .eq('id', studentId) as any);
 
     if (error) {
         console.error('Error updating student status:', error);

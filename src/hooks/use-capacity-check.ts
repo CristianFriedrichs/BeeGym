@@ -32,20 +32,20 @@ export function useCapacityCheck() {
                 throw new Error('User not authenticated');
             }
 
-            const { data: userData } = await supabase
+            const { data: userData } = await (supabase as any)
                 .from('profiles')
                 .select('organization_id')
                 .eq('id', user.id)
                 .single();
 
-            if (!userData?.organization_id) {
+            if (!(userData as any)?.organization_id) {
                 throw new Error('Organization not found');
             }
 
-            const orgId = userData.organization_id as string;
+            const orgId = (userData as any).organization_id as string;
 
             // Count existing bookings for this time slot
-            const { data: events, error } = await supabase
+            const { data: events, error } = await (supabase as any)
                 .from('calendar_events')
                 .select('id')
                 .eq('organization_id', orgId)

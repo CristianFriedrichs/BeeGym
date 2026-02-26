@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 import { User, Dumbbell, Building2, Stethoscope, Trophy } from 'lucide-react'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useOnboarding } from '@/contexts/OnboardingContext'
@@ -39,6 +40,8 @@ const businessTypes = [
     },
 ]
 
+
+
 export default function OnboardingStep1() {
     const router = useRouter()
     const { updateData } = useOnboarding()
@@ -49,6 +52,23 @@ export default function OnboardingStep1() {
         router.push('/login')
         router.refresh()
     }
+
+    // Attempt to self-heal stuck sessions
+    useEffect(() => {
+        const checkStatus = async () => {
+            try {
+                const { syncAuthMetadata } = await import('@/actions/auth-sync')
+                const result = await syncAuthMetadata()
+                if (result.success) {
+                    router.refresh()
+                    router.push('/painel')
+                }
+            } catch (error) {
+                console.error('Auto-sync failed:', error)
+            }
+        }
+        checkStatus()
+    }, [router])
 
     const handleSelect = (typeId: string) => {
         updateData({ businessType: typeId })
@@ -76,21 +96,21 @@ export default function OnboardingStep1() {
                 </div>
 
                 {/* Cards Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
                     {businessTypes.map((type) => {
                         const Icon = type.icon
                         return (
                             <Card
                                 key={type.id}
-                                className="cursor-pointer transition-all hover:border-primary hover:shadow-lg group"
+                                className="cursor-pointer transition-all hover:border-primary hover:shadow-lg group flex flex-col"
                                 onClick={() => handleSelect(type.id)}
                             >
-                                <CardHeader>
-                                    <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                                        <Icon className="w-6 h-6 text-primary" />
+                                <CardHeader className="flex-1 p-4">
+                                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-3 group-hover:bg-primary/20 transition-colors">
+                                        <Icon className="w-5 h-5 text-primary" />
                                     </div>
-                                    <CardTitle className="text-xl">{type.title}</CardTitle>
-                                    <CardDescription className="text-sm">{type.description}</CardDescription>
+                                    <CardTitle className="text-lg mb-1">{type.title}</CardTitle>
+                                    <CardDescription className="text-xs leading-relaxed">{type.description}</CardDescription>
                                 </CardHeader>
                             </Card>
                         )

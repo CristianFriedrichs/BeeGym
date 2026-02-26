@@ -5,7 +5,9 @@ export const exerciseSchema = z.object({
     sets: z.number().min(1, 'Mínimo de 1 série'),
     reps: z.string().min(1, 'Defina as repetições (ex: 10, 10-12)'),
     weight: z.number().min(0, 'Peso não pode ser negativo').optional(),
+    durationSeconds: z.number().min(0).optional(),
     restSeconds: z.number().min(0).optional(),
+    intensity: z.string().optional(),
     notes: z.string().optional(),
 });
 

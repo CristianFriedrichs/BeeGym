@@ -31,14 +31,14 @@ export function UnitProvider({ children }: { children: ReactNode }) {
                 console.log('[UnitContext] User authenticated:', user.id);
 
                 // Get user's organization and name
-                const { data: userData, error: userError } = await supabase
+                const { data: userData, error: userError } = await (supabase as any)
                     .from('profiles')
                     .select('organization_id, full_name')
                     .eq('id', user.id)
                     .single();
 
                 if (userError) {
-                    console.error('[UnitContext] Error fetching user data:', userError);
+                    console.error('[UnitContext] Error fetching user data:', JSON.stringify(userError, null, 2));
                 }
 
                 if (!userData?.organization_id) {
@@ -49,7 +49,7 @@ export function UnitProvider({ children }: { children: ReactNode }) {
                 console.log('[UnitContext] Organization ID:', userData.organization_id);
 
                 // Fetch units for this organization
-                let { data: units, error: unitsError } = await supabase
+                let { data: units, error: unitsError } = await (supabase as any)
                     .from('units')
                     .select('*')
                     .eq('organization_id', userData.organization_id);
@@ -105,7 +105,9 @@ export function UnitProvider({ children }: { children: ReactNode }) {
                     console.log('[UnitContext] ✅ Auto-selected unit:', selectedUnitId);
 
                     // FORCED PERSISTENCE
-                    localStorage.setItem('currentUnitId', selectedUnitId);
+                    if (selectedUnitId) {
+                        localStorage.setItem('currentUnitId', selectedUnitId);
+                    }
                 }
 
                 // SET THE STATE

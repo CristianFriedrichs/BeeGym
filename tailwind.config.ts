@@ -17,8 +17,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        display: ['Inter', 'var(--font-display)', 'sans-serif'], // Títulos e Logo
-        sans: ['Roboto', 'var(--font-body)', 'sans-serif'],      // Corpo de texto
+        display: ['var(--font-display)', 'sans-serif'], // Poppins (Titles & Logo)
+        sans: ['var(--font-body)', 'sans-serif'],    // Roboto (Body & UI)
       },
       colors: {
         // BeeGym Brand Colors

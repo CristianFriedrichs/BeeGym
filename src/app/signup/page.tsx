@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 
 export default function SignupPage() {
   useEffect(() => {
-    redirect('/dashboard');
+    redirect('/painel');
   }, []);
 
   return null;
